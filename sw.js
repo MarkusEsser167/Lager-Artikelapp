@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lager-meldung-v4';
+const CACHE_NAME = 'lager-meldung-v5';
 const PRECACHE = [
   './',
   './index.html',
@@ -22,8 +22,12 @@ const PRECACHE = [
 ];
 
 self.addEventListener('install', (event) => {
+  // { cache: 'reload' } statt cache.addAll(): umgeht den normalen HTTP-Cache des Browsers,
+  // der sonst beim Precachen versehentlich eine veraltete Version einer Datei einfrieren kann.
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(PRECACHE)).then(() => self.skipWaiting())
+    caches.open(CACHE_NAME)
+      .then((cache) => Promise.all(PRECACHE.map((url) => fetch(url, { cache: 'reload' }).then((res) => cache.put(url, res)))))
+      .then(() => self.skipWaiting())
   );
 });
 
@@ -44,7 +48,7 @@ self.addEventListener('fetch', (event) => {
   // Netz versuchen und nur bei Offline auf die zuletzt zwischengespeicherte Version zurückfallen.
   if (url.pathname.includes('/data/')) {
     event.respondWith(
-      fetch(req)
+      fetch(req, { cache: 'reload' })
         .then((res) => {
           if (res && res.ok) {
             const clone = res.clone();
