@@ -6,7 +6,7 @@ const EXPORT_RECIPIENT = 'muenster@wego-vti.de';
 // GmailApp verschickt – analog zur bestehenden WeGo-VTI-Unfallaufnahme-App. Leer lassen,
 // bis das Script deployt ist: exportMeldungen() fällt dann direkt auf den
 // Download+mailto-Weg zurück, ohne einen sinnlosen Netzwerk-Request zu versuchen.
-const MAIL_SCRIPT_URL = '';
+const MAIL_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx-EdJoRy19EtO7Wqoha6qeC5iJ_Qb5JbxIykuyzskSg5qJ4BxeQOz-z82rk2ubhr9Yvg/exec';
 
 function formatDate(iso) {
   if (!iso) return '';
@@ -75,12 +75,17 @@ function arrayBufferToBase64(buffer) {
 }
 
 // Automatischer Versand über das Apps-Script-Webhook (kein manuelles Anhängen nötig).
-// text/plain statt application/json vermeiden einen CORS-Preflight, den Google Apps
-// Script sonst ablehnt (siehe apps-script/Code.gs).
+// text/plain statt application/json vermeidet einen CORS-Preflight. Apps-Script-Webapps
+// leiten die Antwort zusätzlich auf script.googleusercontent.com um, das keine
+// Access-Control-Allow-Origin-Header setzt – die Antwort ist deshalb für JS nicht lesbar
+// (mode: 'no-cors', "opaque" response). Der Request selbst kommt trotzdem an und wird von
+// GmailApp verarbeitet; wir können nur erkennen, ob das Senden des Requests geklappt hat,
+// nicht ob GmailApp serverseitig einen Fehler geworfen hat.
 async function sendViaScript({ blob, filename, subject, message }) {
   const arrayBuffer = await blob.arrayBuffer();
-  const res = await fetch(MAIL_SCRIPT_URL, {
+  await fetch(MAIL_SCRIPT_URL, {
     method: 'POST',
+    mode: 'no-cors',
     headers: { 'Content-Type': 'text/plain' },
     body: JSON.stringify({
       to: EXPORT_RECIPIENT,
@@ -91,9 +96,6 @@ async function sendViaScript({ blob, filename, subject, message }) {
       file_base64: arrayBufferToBase64(arrayBuffer),
     }),
   });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const data = await res.json();
-  if (data.status !== 'ok') throw new Error('Unerwartete Antwort vom Mail-Script');
 }
 
 export async function exportMeldungen(meldungen) {
