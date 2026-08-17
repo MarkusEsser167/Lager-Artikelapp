@@ -1,5 +1,6 @@
 import { MeldungStore, newId, getMelderName, setMelderName } from '../db.js';
 import { scanField } from '../formFields.js';
+import { loadArtikelListe, loadLagerplatzListe } from '../refData.js';
 
 export async function renderNewLagerplatz(container, router) {
   container.innerHTML = '';
@@ -14,23 +15,47 @@ export async function renderNewLagerplatz(container, router) {
   container.appendChild(backBtn);
   container.appendChild(header);
 
+  const [artikelListe, lagerplatzListe] = await Promise.all([loadArtikelListe(), loadLagerplatzListe()]);
+
   const section = document.createElement('div');
   section.className = 'section';
   container.appendChild(section);
 
-  const artikel = scanField({ id: 'artikelnummer', label: 'Artikelnummer', placeholder: 'Artikelnummer scannen oder eingeben' });
-  section.appendChild(artikel.wrap);
-
   const bezeichnung = simpleField({ id: 'artikelbezeichnung', label: 'Artikelbezeichnung (optional)' });
+
+  const artikel = scanField({
+    id: 'artikelnummer',
+    label: 'Artikelnummer',
+    placeholder: 'Artikelnummer scannen, eingeben oder suchen',
+    items: artikelListe,
+    valueKey: 'nummer',
+    labelKey: 'bezeichnung',
+    onSelect: (m) => { bezeichnung.input.value = m.bezeichnung; },
+  });
+  section.appendChild(artikel.wrap);
   section.appendChild(bezeichnung.wrap);
 
   const menge = simpleField({ id: 'menge', label: 'Menge (optional)', type: 'number' });
   section.appendChild(menge.wrap);
 
-  const altPlatz = scanField({ id: 'alt-lagerplatz', label: 'Bisheriger Lagerplatz', placeholder: 'Lagerplatz scannen oder eingeben' });
+  const altPlatz = scanField({
+    id: 'alt-lagerplatz',
+    label: 'Bisheriger Lagerplatz',
+    placeholder: 'Lagerplatz scannen, eingeben oder suchen',
+    items: lagerplatzListe,
+    valueKey: 'code',
+    labelKey: 'bezeichnung',
+  });
   section.appendChild(altPlatz.wrap);
 
-  const neuPlatz = scanField({ id: 'neu-lagerplatz', label: 'Neuer Lagerplatz', placeholder: 'Lagerplatz scannen oder eingeben' });
+  const neuPlatz = scanField({
+    id: 'neu-lagerplatz',
+    label: 'Neuer Lagerplatz',
+    placeholder: 'Lagerplatz scannen, eingeben oder suchen',
+    items: lagerplatzListe,
+    valueKey: 'code',
+    labelKey: 'bezeichnung',
+  });
   section.appendChild(neuPlatz.wrap);
 
   const bemerkung = simpleField({ id: 'bemerkung', label: 'Bemerkung (optional)', textarea: true });

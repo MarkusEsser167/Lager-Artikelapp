@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lager-meldung-v2';
+const CACHE_NAME = 'lager-meldung-v3';
 const PRECACHE = [
   './',
   './index.html',
@@ -11,6 +11,7 @@ const PRECACHE = [
   './js/share.js',
   './js/export.js',
   './js/formFields.js',
+  './js/refData.js',
   './js/views/home.js',
   './js/views/newLagerplatz.js',
   './js/views/newVerschrottung.js',
@@ -36,7 +37,25 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   const req = event.request;
-  if (req.method !== 'GET' || new URL(req.url).origin !== self.location.origin) return;
+  const url = new URL(req.url);
+  if (req.method !== 'GET' || url.origin !== self.location.origin) return;
+
+  // Artikel-/Lagerplatzliste sollen möglichst aktuell sein, sobald online: hier zuerst das
+  // Netz versuchen und nur bei Offline auf die zuletzt zwischengespeicherte Version zurückfallen.
+  if (url.pathname.includes('/data/')) {
+    event.respondWith(
+      fetch(req)
+        .then((res) => {
+          if (res && res.ok) {
+            const clone = res.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(req, clone));
+          }
+          return res;
+        })
+        .catch(() => caches.match(req))
+    );
+    return;
+  }
 
   event.respondWith(
     caches.match(req).then((cached) => {

@@ -6,9 +6,22 @@ Progressive Web App für Lagertablets: Meldung von Lagerplatzänderungen und Ver
 
 - **Lagerplatzänderung melden** – Artikelnummer, bisheriger/neuer Lagerplatz, Menge, Bemerkung
 - **Verschrottung melden** – Artikelnummer, Lagerplatz, Grund, Foto, Bemerkung
-- Artikelnummer & Lagerplatz per Barcode-/QR-Scan über die Tablet-Kamera erfassbar (Fallback: manuelle Eingabe)
+- Artikelnummer & Lagerplatz per Barcode-/QR-Scan über die Tablet-Kamera erfassbar, mit Suche/Vorschlagsliste aus hinterlegten Listen (Fallback: manuelle Eingabe)
 - Meldungen werden lokal auf dem Tablet gespeichert (IndexedDB) und sind offline nutzbar
 - Sammel-Export offener Meldungen als Excel-Datei, per E-Mail-Entwurf an eine feste Adresse
+
+## Artikel- und Lagerplatzliste aktualisieren
+
+Die Vorschlagslisten für die Formulare liegen als Excel-Dateien im Repo:
+
+- `data/artikelliste.xlsx` – Spalten `Artikelnummer`, `Bezeichnung`
+- `data/lagerplatzliste.xlsx` – Spalten `Lagerplatz`, `Bezeichnung`
+
+Um sie zu aktualisieren: auf GitHub in den Ordner `data/` gehen, die jeweilige Datei öffnen und über
+„Upload file“ durch eine neue Version mit denselben Spaltenüberschriften ersetzen (Commit direkt im
+Browser). Es ist **keine Code-Änderung** nötig – die App liest beim nächsten Laden automatisch die
+aktuelle Version. Tablets, die offline sind, nutzen bis zur nächsten Online-Verbindung weiterhin die
+zuletzt geladene Version.
 
 ## Installation auf einem Tablet
 

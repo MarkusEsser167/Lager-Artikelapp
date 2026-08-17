@@ -1,5 +1,6 @@
 import { MeldungStore, getMelderName, setMelderName } from '../db.js';
 import { exportMeldungen } from '../export.js';
+import { loadArtikelListe, loadLagerplatzListe } from '../refData.js';
 
 const TYPE_LABEL = {
   lagerplatz: { text: 'Lagerplatzänderung', cls: 'badge-lager', icon: '📦' },
@@ -15,6 +16,7 @@ export async function renderHome(container, router) {
   container.appendChild(header);
 
   container.appendChild(melderBox());
+  container.appendChild(await refDataStatus());
 
   const actions = document.createElement('div');
   actions.className = 'home-actions';
@@ -61,6 +63,17 @@ function melderBox() {
   `;
   const input = box.querySelector('#melder-input');
   input.addEventListener('change', () => setMelderName(input.value.trim()));
+  return box;
+}
+
+async function refDataStatus() {
+  const [artikel, lagerplaetze] = await Promise.all([loadArtikelListe(), loadLagerplatzListe()]);
+  const box = document.createElement('div');
+  box.className = 'ref-data-status';
+  box.innerHTML = `
+    <span>${artikel.length ? `📋 Artikelliste: ${artikel.length} Artikel` : '⚠️ Artikelliste nicht gefunden (data/artikelliste.xlsx)'}</span>
+    <span>${lagerplaetze.length ? `📋 Lagerplatzliste: ${lagerplaetze.length} Plätze` : '⚠️ Lagerplatzliste nicht gefunden (data/lagerplatzliste.xlsx)'}</span>
+  `;
   return box;
 }
 

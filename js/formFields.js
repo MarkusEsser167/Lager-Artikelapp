@@ -1,7 +1,10 @@
 import { scanBarcode, isScanSupported } from './barcode.js';
 
-// Baut ein Textfeld mit optionalem Scan-Button (Barcode/QR über Kamera).
-export function scanField({ id, label, placeholder = '' }) {
+// Baut ein Textfeld mit Scan-Button (Barcode/QR über Kamera) und optional einer
+// Trefferliste aus einer hinterlegten Vorgabeliste (Artikel-/Lagerplatzliste), die
+// beim Tippen oder nach einem Scan gefiltert wird. onSelect wird bei einem Treffer
+// aufgerufen (z.B. um die Artikelbezeichnung automatisch mit einzutragen).
+export function scanField({ id, label, placeholder = '', items = null, valueKey, labelKey, onSelect }) {
   const wrap = document.createElement('div');
   wrap.className = 'field';
   wrap.innerHTML = `
@@ -13,6 +16,45 @@ export function scanField({ id, label, placeholder = '' }) {
   `;
   const input = wrap.querySelector('input');
   const scanBtn = wrap.querySelector('.btn-scan');
+
+  let resultsBox = null;
+  if (items && items.length) {
+    resultsBox = document.createElement('div');
+    resultsBox.className = 'lookup-results';
+    wrap.appendChild(resultsBox);
+
+    const showResults = (query) => {
+      resultsBox.innerHTML = '';
+      const q = query.trim().toLowerCase();
+      if (!q) return;
+      const matches = items
+        .filter((it) => it[valueKey].toLowerCase().includes(q) || (it[labelKey] || '').toLowerCase().includes(q))
+        .slice(0, 8);
+      matches.forEach((m) => {
+        const row = document.createElement('button');
+        row.type = 'button';
+        row.className = 'lookup-result-row';
+        row.textContent = m[labelKey] ? `${m[valueKey]} – ${m[labelKey]}` : m[valueKey];
+        row.addEventListener('mousedown', (e) => e.preventDefault()); // Klick vor Blur behalten
+        row.addEventListener('click', () => {
+          input.value = m[valueKey];
+          resultsBox.innerHTML = '';
+          if (onSelect) onSelect(m);
+        });
+        resultsBox.appendChild(row);
+      });
+    };
+
+    input.addEventListener('input', () => showResults(input.value));
+    input.addEventListener('blur', () => setTimeout(() => { resultsBox.innerHTML = ''; }, 150));
+
+    const findExact = (value) => items.find((it) => it[valueKey].toLowerCase() === value.trim().toLowerCase());
+    input.addEventListener('change', () => {
+      const match = findExact(input.value);
+      if (match && onSelect) onSelect(match);
+    });
+  }
+
   if (scanBtn) {
     scanBtn.addEventListener('click', async () => {
       const value = await scanBarcode({ title: label });
@@ -22,5 +64,6 @@ export function scanField({ id, label, placeholder = '' }) {
       }
     });
   }
+
   return { wrap, input };
 }
