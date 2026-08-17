@@ -27,12 +27,15 @@ function parseSheet(wb, aliasMap) {
   if (!rows.length) return [];
 
   const keys = Object.keys(aliasMap);
+  const primaryKey = keys[0];
   const header = rows[0].map((h) => String(h || '').trim().toLowerCase());
   const colIdx = {};
   keys.forEach((key) => {
     colIdx[key] = header.findIndex((h) => aliasMap[key].includes(h));
   });
-  const headerRecognized = keys.every((key) => colIdx[key] >= 0);
+  // Nur die erste Spalte (z.B. Artikelnummer/Lagerplatz) muss erkannt werden – weitere
+  // Spalten wie Bezeichnung sind optional und bleiben sonst einfach leer.
+  const headerRecognized = colIdx[primaryKey] >= 0;
   // Ohne erkennbare Kopfzeile wird positionell gelesen (1. Spalte = erster Schlüssel usw.)
   const dataRows = headerRecognized ? rows.slice(1) : rows;
 
@@ -41,11 +44,11 @@ function parseSheet(wb, aliasMap) {
       const item = {};
       keys.forEach((key, i) => {
         const idx = headerRecognized ? colIdx[key] : i;
-        item[key] = String(row[idx] ?? '').trim();
+        item[key] = idx >= 0 ? String(row[idx] ?? '').trim() : '';
       });
       return item;
     })
-    .filter((item) => item[keys[0]]);
+    .filter((item) => item[primaryKey]);
 }
 
 let artikelCache = null;

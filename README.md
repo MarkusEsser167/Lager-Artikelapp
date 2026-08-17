@@ -15,7 +15,7 @@ Progressive Web App für Lagertablets: Meldung von Lagerplatzänderungen und Ver
 Die Vorschlagslisten für die Formulare liegen als Excel-Dateien im Repo:
 
 - `data/artikelliste.xlsx` – Spalten `Artikelnummer`, `Bezeichnung`
-- `data/lagerplatzliste.xlsx` – Spalten `Lagerplatz`, `Bezeichnung`
+- `data/lagerplatzliste.xlsx` – Spalte `Lagerplatz` (eine `Bezeichnung`-Spalte ist optional, wird aber aktuell nicht mitgeführt)
 
 Um sie zu aktualisieren: auf GitHub in den Ordner `data/` gehen, die jeweilige Datei öffnen und über
 „Upload file“ durch eine neue Version mit denselben Spaltenüberschriften ersetzen (Commit direkt im

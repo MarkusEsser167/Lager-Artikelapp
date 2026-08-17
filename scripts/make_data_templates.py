@@ -18,15 +18,16 @@ def make_artikelliste(path):
     wb.save(path)
 
 def make_lagerplatzliste(path):
+    # Nur zur Referenz – data/lagerplatzliste.xlsx enthält inzwischen die echte
+    # Liste (eine Spalte "Lagerplatz", ohne Bezeichnung). Nicht überschreiben.
     wb = Workbook()
     ws = wb.active
     ws.title = "Lagerplaetze"
-    ws.append(["Lagerplatz", "Bezeichnung"])
-    ws.append(["A-01-01", "Halle A, Regal 1, Fach 1"])
-    ws.append(["A-01-02", "Halle A, Regal 1, Fach 2"])
-    ws.append(["B-05-01", "Halle B, Regal 5, Fach 1"])
+    ws.append(["Lagerplatz"])
+    ws.append(["A-01-01"])
+    ws.append(["A-01-02"])
+    ws.append(["B-05-01"])
     wb.save(path)
 
 make_artikelliste("data/artikelliste.xlsx")
-make_lagerplatzliste("data/lagerplatzliste.xlsx")
-print("done")
+print("done (lagerplatzliste.xlsx enthält bereits echte Daten und wird hier nicht neu erzeugt)")
