@@ -2,6 +2,12 @@ import { downloadBlob, openMailto } from './share.js';
 
 const EXPORT_RECIPIENT = 'muenster@wego-vti.de';
 
+// Google-Apps-Script-Webhook (siehe apps-script/Code.gs), der den Anhang automatisch per
+// GmailApp verschickt – analog zur bestehenden WeGo-VTI-Unfallaufnahme-App. Leer lassen,
+// bis das Script deployt ist: exportMeldungen() fällt dann direkt auf den
+// Download+mailto-Weg zurück, ohne einen sinnlosen Netzwerk-Request zu versuchen.
+const MAIL_SCRIPT_URL = '';
+
 function formatDate(iso) {
   if (!iso) return '';
   const d = new Date(iso);
@@ -58,21 +64,65 @@ export function buildWorkbook(meldungen) {
   return wb;
 }
 
-// Web-Share liefert keine Möglichkeit, den Empfänger vorzubelegen – da die Meldungen
-// immer an dieselbe feste Adresse gehen, wird stattdessen deterministisch die Excel-Datei
-// heruntergeladen und ein E-Mail-Entwurf mit vorausgefülltem Empfänger geöffnet. Der Anhang
-// muss der Nutzer im Mail-Programm einmal manuell hinzufügen (mailto erlaubt keine Anhänge).
+function arrayBufferToBase64(buffer) {
+  let binary = '';
+  const bytes = new Uint8Array(buffer);
+  const chunkSize = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunkSize));
+  }
+  return btoa(binary);
+}
+
+// Automatischer Versand über das Apps-Script-Webhook (kein manuelles Anhängen nötig).
+// text/plain statt application/json vermeiden einen CORS-Preflight, den Google Apps
+// Script sonst ablehnt (siehe apps-script/Code.gs).
+async function sendViaScript({ blob, filename, subject, message }) {
+  const arrayBuffer = await blob.arrayBuffer();
+  const res = await fetch(MAIL_SCRIPT_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify({
+      to: EXPORT_RECIPIENT,
+      subject,
+      message,
+      filename,
+      mime_type: blob.type,
+      file_base64: arrayBufferToBase64(arrayBuffer),
+    }),
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const data = await res.json();
+  if (data.status !== 'ok') throw new Error('Unerwartete Antwort vom Mail-Script');
+}
+
 export async function exportMeldungen(meldungen) {
   const wb = buildWorkbook(meldungen);
   const arrayBuffer = window.XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
   const blob = new Blob([arrayBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
   const stamp = new Date().toISOString().replace(/[:T]/g, '-').slice(0, 16);
   const filename = `Lagermeldungen_${stamp}.xlsx`;
+  const subject = `Lagermeldungen ${stamp}`;
+  const message = `${meldungen.length} Lagermeldung(en) im Anhang.`;
+
+  if (MAIL_SCRIPT_URL) {
+    try {
+      await sendViaScript({ blob, filename, subject, message });
+      return { method: 'auto' };
+    } catch (err) {
+      console.warn('Automatischer Mailversand fehlgeschlagen, Fallback auf Download+mailto:', err.message);
+    }
+  }
+
+  // Fallback: Web-Share liefert keine Möglichkeit, den Empfänger vorzubelegen – daher
+  // Excel-Datei herunterladen und E-Mail-Entwurf mit vorausgefülltem Empfänger öffnen.
+  // Der Anhang muss der Nutzer im Mail-Programm einmal manuell hinzufügen (mailto erlaubt
+  // keine Anhänge).
   downloadBlob(blob, filename);
   openMailto({
     to: EXPORT_RECIPIENT,
-    subject: `Lagermeldungen ${stamp}`,
-    body: `${meldungen.length} Lagermeldung(en) im Anhang.\n\nBitte die heruntergeladene Datei "${filename}" an diese Mail anhängen.`,
+    subject,
+    body: `${message}\n\nBitte die heruntergeladene Datei "${filename}" an diese Mail anhängen.`,
   });
   return { method: 'download' };
 }

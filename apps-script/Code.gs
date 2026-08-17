@@ -1,0 +1,36 @@
+/**
+ * WeGoVTI-Lagermeldungmail – Google Apps Script Web App.
+ *
+ * Nimmt einen POST von der Lagermeldungen-PWA entgegen und verschickt den
+ * mitgeschickten Anhang (Excel-Export) per GmailApp an den angegebenen Empfänger.
+ * Analog zum bestehenden Skript "WeGoVTI-Unfallmail" der Unfallaufnahme-App –
+ * hier aber generisch für beliebige Dateitypen (mime_type statt fest "application/pdf").
+ *
+ * Deployment: script.google.com -> neues Projekt -> diesen Code einfügen ->
+ * "Bereitstellen" -> "Web-App" -> Ausführen als "Ich", Zugriff "Jeder" -> Bereitstellen.
+ * Bei jeder Code-Änderung: "Bereitstellungen verwalten" -> Stift -> NEUE VERSION -> Bereitstellen
+ * (sonst läuft weiterhin der alte Code).
+ */
+function doPost(e) {
+  const data = JSON.parse(e.postData.contents);
+
+  const blob = Utilities.newBlob(
+    Utilities.base64Decode(data.file_base64),
+    data.mime_type || 'application/octet-stream',
+    data.filename
+  );
+
+  GmailApp.sendEmail(
+    data.to,
+    data.subject,
+    data.message || '',
+    {
+      attachments: [blob],
+      name: 'WeGo VTI Lagermeldungen',
+    }
+  );
+
+  return ContentService
+    .createTextOutput(JSON.stringify({ status: 'ok' }))
+    .setMimeType(ContentService.MimeType.JSON);
+}
