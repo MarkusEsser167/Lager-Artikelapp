@@ -1,7 +1,8 @@
 import { MeldungStore, newId, getMelderName, setMelderName } from '../db.js';
 import { scanField } from '../formFields.js';
 import { pickPhoto } from '../camera.js';
-import { loadArtikelListe, loadLagerplatzListe } from '../refData.js';
+import { loadArtikelListe } from '../refData.js';
+import { sendVerschrottungMeldung } from '../export.js';
 
 const GRUENDE = ['Beschädigt', 'Abgelaufen/verdorben', 'Falschlieferung', 'Retoure defekt', 'Sonstiges'];
 
@@ -20,10 +21,10 @@ export async function renderNewVerschrottung(container, router) {
 
   const loading = document.createElement('div');
   loading.className = 'empty-state';
-  loading.textContent = 'Lade Artikel- und Lagerplatzliste…';
+  loading.textContent = 'Lade Artikelliste…';
   container.appendChild(loading);
 
-  const [artikelListe, lagerplatzListe] = await Promise.all([loadArtikelListe(), loadLagerplatzListe()]);
+  const artikelListe = await loadArtikelListe();
   loading.remove();
 
   const section = document.createElement('div');
@@ -46,16 +47,6 @@ export async function renderNewVerschrottung(container, router) {
 
   const menge = simpleField({ id: 'menge', label: 'Menge (optional)', type: 'number' });
   section.appendChild(menge.wrap);
-
-  const platz = scanField({
-    id: 'lagerplatz',
-    label: 'Lagerplatz',
-    placeholder: 'Lagerplatz scannen, eingeben oder suchen',
-    items: lagerplatzListe,
-    valueKey: 'code',
-    labelKey: 'bezeichnung',
-  });
-  section.appendChild(platz.wrap);
 
   // Grund
   const grundWrap = document.createElement('div');
@@ -116,7 +107,7 @@ export async function renderNewVerschrottung(container, router) {
   actionBar.className = 'action-bar';
   const saveBtn = document.createElement('button');
   saveBtn.className = 'btn btn-danger btn-block';
-  saveBtn.textContent = 'Meldung speichern';
+  saveBtn.textContent = 'Meldung senden';
   saveBtn.addEventListener('click', async () => {
     if (!artikel.input.value.trim()) {
       alert('Bitte eine Artikelnummer angeben.');
@@ -133,22 +124,29 @@ export async function renderNewVerschrottung(container, router) {
       return;
     }
     setMelderName(melder.input.value.trim());
-    const now = new Date().toISOString();
-    await MeldungStore.saveMeldung({
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Wird gesendet…';
+    const meldung = {
       id: newId(),
       type: 'verschrottung',
       status: 'offen',
-      createdAt: now,
+      createdAt: new Date().toISOString(),
       artikelnummer: artikel.input.value.trim(),
       artikelbezeichnung: bezeichnung.input.value.trim(),
       menge: menge.input.value.trim(),
-      lagerplatz: platz.input.value.trim(),
       grund: selectedGrund,
       grundSonstiges: sonstiges.input.value.trim(),
       bemerkung: bemerkung.input.value.trim(),
       foto: photoDataUrl,
       melder: melder.input.value.trim(),
-    });
+    };
+    await MeldungStore.saveMeldung(meldung);
+    try {
+      const result = await sendVerschrottungMeldung(meldung);
+      await MeldungStore.updateStatus(meldung.id, result.method === 'auto' ? 'gesendet' : 'manuell');
+    } catch (err) {
+      alert('Versand fehlgeschlagen: ' + err.message);
+    }
     router.navigate('');
   });
   actionBar.appendChild(saveBtn);

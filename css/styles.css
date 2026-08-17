@@ -110,13 +110,12 @@ h3 { margin: 0; }
   padding: 12px 14px;
   font: inherit;
   color: inherit;
-  position: relative;
 }
-.protocol-card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; padding-right: 70px; }
+.protocol-card-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 4px; flex-wrap: wrap; }
 .protocol-type { font-size: 0.8rem; color: var(--text-muted); }
 .protocol-card-title { font-size: 1.1rem; font-weight: 700; }
 .protocol-card-sub { font-size: 0.85rem; color: var(--text-muted); }
-.card-delete { position: absolute; top: 10px; right: 10px; }
+.card-actions { display: flex; gap: 8px; margin-top: 10px; }
 
 .vehicle-list-status {
   display: flex;

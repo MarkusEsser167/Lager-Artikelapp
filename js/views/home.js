@@ -1,5 +1,5 @@
 import { MeldungStore, getMelderName, setMelderName } from '../db.js';
-import { exportMeldungen } from '../export.js';
+import { sendLagerplatzMeldung, sendVerschrottungMeldung } from '../export.js';
 import { loadArtikelListe, loadLagerplatzListe } from '../refData.js';
 
 const TYPE_LABEL = {
@@ -35,9 +35,6 @@ export async function renderHome(container, router) {
   container.appendChild(actions);
 
   const meldungen = await MeldungStore.listMeldungen();
-  const offen = meldungen.filter((m) => m.status !== 'exportiert');
-
-  container.appendChild(exportBar(offen, container, router));
 
   const list = document.createElement('div');
   list.className = 'protocol-list';
@@ -81,54 +78,55 @@ function refDataStatus() {
   return box;
 }
 
-function exportBar(offen, container, router) {
-  const box = document.createElement('div');
-  box.className = 'vehicle-list-status';
-  const label = document.createElement('span');
-  label.textContent = offen.length
-    ? `${offen.length} offene Meldung(en) noch nicht exportiert`
-    : 'Alle Meldungen exportiert';
-  const btn = document.createElement('button');
-  btn.className = 'btn btn-secondary btn-sm';
-  btn.textContent = '📤 Per Mail exportieren';
-  btn.disabled = !offen.length;
-  btn.addEventListener('click', async () => {
-    btn.disabled = true;
-    btn.textContent = 'Wird erstellt…';
-    try {
-      await exportMeldungen(offen);
-      await MeldungStore.markExported(offen.map((m) => m.id));
-      await renderHome(container, router);
-    } catch (err) {
-      alert('Export fehlgeschlagen: ' + err.message);
-      btn.disabled = false;
-      btn.textContent = '📤 Per Mail exportieren';
-    }
-  });
-  box.appendChild(label);
-  box.appendChild(btn);
-  return box;
-}
+const STATUS_LABEL = {
+  gesendet: { text: 'Automatisch gesendet', cls: 'badge-fertig' },
+  manuell: { text: 'Manueller Versand nötig', cls: 'badge-verschrottung' },
+  offen: { text: 'Nicht gesendet', cls: 'badge-verschrottung' },
+};
 
 function meldungCard(m, container, router) {
   const type = TYPE_LABEL[m.type] || { text: m.type, cls: '', icon: '' };
+  const status = STATUS_LABEL[m.status] || STATUS_LABEL.offen;
   const card = document.createElement('div');
   card.className = 'protocol-card';
   const title = m.artikelnummer || '(keine Artikelnummer)';
   const sub =
     m.type === 'lagerplatz'
       ? `${m.altLagerplatz || '–'} → ${m.neuLagerplatz || '–'}`
-      : `${m.lagerplatz || '–'} · ${m.grund || '–'}`;
+      : `${m.grund || '–'}${m.menge ? ' · ' + m.menge + ' Stk.' : ''}`;
   card.innerHTML = `
     <div class="protocol-card-top">
-      <span class="badge ${m.status === 'exportiert' ? 'badge-fertig' : type.cls}">${m.status === 'exportiert' ? 'Exportiert' : 'Offen'}</span>
+      <span class="badge ${status.cls}">${status.text}</span>
       <span class="protocol-type">${type.icon} ${type.text}</span>
     </div>
     <div class="protocol-card-title">${escapeHtml(title)}</div>
     <div class="protocol-card-sub">${escapeHtml(sub)} · ${formatDate(m.createdAt)} · ${escapeHtml(m.melder || '–')}</div>
   `;
+  const actions = document.createElement('div');
+  actions.className = 'card-actions';
+
+  if (m.status !== 'gesendet') {
+    const retryBtn = document.createElement('button');
+    retryBtn.className = 'btn btn-ghost btn-sm';
+    retryBtn.textContent = 'Erneut senden';
+    retryBtn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      retryBtn.disabled = true;
+      retryBtn.textContent = 'Wird gesendet…';
+      try {
+        const send = m.type === 'lagerplatz' ? sendLagerplatzMeldung : sendVerschrottungMeldung;
+        const result = await send(m);
+        await MeldungStore.updateStatus(m.id, result.method === 'auto' ? 'gesendet' : 'manuell');
+      } catch (err) {
+        alert('Versand fehlgeschlagen: ' + err.message);
+      }
+      await renderHome(container, router);
+    });
+    actions.appendChild(retryBtn);
+  }
+
   const delBtn = document.createElement('button');
-  delBtn.className = 'btn btn-ghost btn-sm card-delete';
+  delBtn.className = 'btn btn-ghost btn-sm';
   delBtn.textContent = 'Löschen';
   delBtn.addEventListener('click', async (e) => {
     e.stopPropagation();
@@ -137,7 +135,8 @@ function meldungCard(m, container, router) {
       await renderHome(container, router);
     }
   });
-  card.appendChild(delBtn);
+  actions.appendChild(delBtn);
+  card.appendChild(actions);
   return card;
 }
 

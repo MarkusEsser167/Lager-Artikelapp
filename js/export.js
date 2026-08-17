@@ -1,68 +1,15 @@
 import { downloadBlob, openMailto } from './share.js';
+import { buildVerschrottungPdf } from './pdf.js';
+import { formatDate } from './format.js';
 
-const EXPORT_RECIPIENT = 'muenster@wego-vti.de';
+const LAGERPLATZ_RECIPIENT = 'muenster@wego-vti.de';
+const VERSCHROTTUNG_RECIPIENT = 'Martin.Jochheim@wego-vti.de';
 
 // Google-Apps-Script-Webhook (siehe apps-script/Code.gs), der den Anhang automatisch per
 // GmailApp verschickt – analog zur bestehenden WeGo-VTI-Unfallaufnahme-App. Leer lassen,
-// bis das Script deployt ist: exportMeldungen() fällt dann direkt auf den
-// Download+mailto-Weg zurück, ohne einen sinnlosen Netzwerk-Request zu versuchen.
+// bis das Script deployt ist: der Versand fällt dann direkt auf den Download+mailto-Weg
+// zurück, ohne einen sinnlosen Netzwerk-Request zu versuchen.
 const MAIL_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx-EdJoRy19EtO7Wqoha6qeC5iJ_Qb5JbxIykuyzskSg5qJ4BxeQOz-z82rk2ubhr9Yvg/exec';
-
-function formatDate(iso) {
-  if (!iso) return '';
-  const d = new Date(iso);
-  return d.toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-}
-
-function buildLagerplatzRows(list) {
-  return list
-    .filter((m) => m.type === 'lagerplatz')
-    .map((m) => ({
-      Datum: formatDate(m.createdAt),
-      Artikelnummer: m.artikelnummer || '',
-      Artikelbezeichnung: m.artikelbezeichnung || '',
-      Menge: m.menge || '',
-      'Bisheriger Lagerplatz': m.altLagerplatz || '',
-      'Neuer Lagerplatz': m.neuLagerplatz || '',
-      Bemerkung: m.bemerkung || '',
-      'Gemeldet von': m.melder || '',
-    }));
-}
-
-function buildVerschrottungRows(list) {
-  return list
-    .filter((m) => m.type === 'verschrottung')
-    .map((m) => ({
-      Datum: formatDate(m.createdAt),
-      Artikelnummer: m.artikelnummer || '',
-      Artikelbezeichnung: m.artikelbezeichnung || '',
-      Menge: m.menge || '',
-      Lagerplatz: m.lagerplatz || '',
-      Grund: m.grund === 'Sonstiges' && m.grundSonstiges ? `Sonstiges – ${m.grundSonstiges}` : m.grund || '',
-      Bemerkung: m.bemerkung || '',
-      'Gemeldet von': m.melder || '',
-      Foto: m.foto ? 'Ja' : 'Nein',
-    }));
-}
-
-export function buildWorkbook(meldungen) {
-  const wb = window.XLSX.utils.book_new();
-  const lagerRows = buildLagerplatzRows(meldungen);
-  const verschrottungRows = buildVerschrottungRows(meldungen);
-
-  if (lagerRows.length) {
-    const ws = window.XLSX.utils.json_to_sheet(lagerRows);
-    window.XLSX.utils.book_append_sheet(wb, ws, 'Lagerplatzänderungen');
-  }
-  if (verschrottungRows.length) {
-    const ws = window.XLSX.utils.json_to_sheet(verschrottungRows);
-    window.XLSX.utils.book_append_sheet(wb, ws, 'Verschrottungen');
-  }
-  if (!lagerRows.length && !verschrottungRows.length) {
-    window.XLSX.utils.book_append_sheet(wb, window.XLSX.utils.aoa_to_sheet([['Keine Meldungen']]), 'Leer');
-  }
-  return wb;
-}
 
 function arrayBufferToBase64(buffer) {
   let binary = '';
@@ -81,50 +28,83 @@ function arrayBufferToBase64(buffer) {
 // (mode: 'no-cors', "opaque" response). Der Request selbst kommt trotzdem an und wird von
 // GmailApp verarbeitet; wir können nur erkennen, ob das Senden des Requests geklappt hat,
 // nicht ob GmailApp serverseitig einen Fehler geworfen hat.
-async function sendViaScript({ blob, filename, subject, message }) {
-  const arrayBuffer = await blob.arrayBuffer();
+async function sendViaScript({ to, subject, message, filename, mimeType, arrayBuffer }) {
   await fetch(MAIL_SCRIPT_URL, {
     method: 'POST',
     mode: 'no-cors',
     headers: { 'Content-Type': 'text/plain' },
     body: JSON.stringify({
-      to: EXPORT_RECIPIENT,
+      to,
       subject,
       message,
       filename,
-      mime_type: blob.type,
+      mime_type: mimeType,
       file_base64: arrayBufferToBase64(arrayBuffer),
     }),
   });
 }
 
-export async function exportMeldungen(meldungen) {
-  const wb = buildWorkbook(meldungen);
+// Fallback, falls das Script nicht erreichbar ist: Datei herunterladen + E-Mail-Entwurf mit
+// vorausgefülltem Empfänger öffnen. Der Anhang muss der Nutzer im Mail-Programm einmal
+// manuell hinzufügen (mailto erlaubt keine Anhänge, Web-Share kein Vorbelegen des Empfängers).
+function fallbackDownloadAndMail({ blob, filename, to, subject, message }) {
+  downloadBlob(blob, filename);
+  openMailto({
+    to,
+    subject,
+    body: `${message}\n\nBitte die heruntergeladene Datei "${filename}" an diese Mail anhängen.`,
+  });
+}
+
+export async function sendLagerplatzMeldung(m) {
+  const wb = window.XLSX.utils.book_new();
+  const row = {
+    Datum: formatDate(m.createdAt),
+    Artikelnummer: m.artikelnummer || '',
+    Artikelbezeichnung: m.artikelbezeichnung || '',
+    'Bisheriger Lagerplatz': m.altLagerplatz || '',
+    'Neuer Lagerplatz': m.neuLagerplatz || '',
+    Bemerkung: m.bemerkung || '',
+    'Gemeldet von': m.melder || '',
+  };
+  const ws = window.XLSX.utils.json_to_sheet([row]);
+  window.XLSX.utils.book_append_sheet(wb, ws, 'Lagerplatzänderung');
   const arrayBuffer = window.XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
   const blob = new Blob([arrayBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-  const stamp = new Date().toISOString().replace(/[:T]/g, '-').slice(0, 16);
-  const filename = `Lagermeldungen_${stamp}.xlsx`;
-  const subject = `Lagermeldungen ${stamp}`;
-  const message = `${meldungen.length} Lagermeldung(en) im Anhang.`;
+
+  const safeArtikel = (m.artikelnummer || 'artikel').replace(/[^a-zA-Z0-9_-]+/g, '_');
+  const filename = `Lagerplatzaenderung_${safeArtikel}_${m.id}.xlsx`;
+  const subject = `Lagerplatzänderung – ${m.artikelnummer || 'ohne Artikelnummer'}`;
+  const message = `Lagerplatzänderung gemeldet von ${m.melder || '–'}.\nArtikel: ${m.artikelnummer || '–'}\n${m.altLagerplatz || '–'} → ${m.neuLagerplatz || '–'}`;
 
   if (MAIL_SCRIPT_URL) {
     try {
-      await sendViaScript({ blob, filename, subject, message });
+      await sendViaScript({ to: LAGERPLATZ_RECIPIENT, subject, message, filename, mimeType: blob.type, arrayBuffer });
       return { method: 'auto' };
     } catch (err) {
       console.warn('Automatischer Mailversand fehlgeschlagen, Fallback auf Download+mailto:', err.message);
     }
   }
+  fallbackDownloadAndMail({ blob, filename, to: LAGERPLATZ_RECIPIENT, subject, message });
+  return { method: 'download' };
+}
 
-  // Fallback: Web-Share liefert keine Möglichkeit, den Empfänger vorzubelegen – daher
-  // Excel-Datei herunterladen und E-Mail-Entwurf mit vorausgefülltem Empfänger öffnen.
-  // Der Anhang muss der Nutzer im Mail-Programm einmal manuell hinzufügen (mailto erlaubt
-  // keine Anhänge).
-  downloadBlob(blob, filename);
-  openMailto({
-    to: EXPORT_RECIPIENT,
-    subject,
-    body: `${message}\n\nBitte die heruntergeladene Datei "${filename}" an diese Mail anhängen.`,
-  });
+export async function sendVerschrottungMeldung(m) {
+  const { doc, filename } = await buildVerschrottungPdf(m);
+  const arrayBuffer = doc.output('arraybuffer');
+  const blob = new Blob([arrayBuffer], { type: 'application/pdf' });
+
+  const subject = `Verschrottung – ${m.artikelnummer || 'ohne Artikelnummer'}`;
+  const message = `Verschrottung gemeldet von ${m.melder || '–'}.\nArtikel: ${m.artikelnummer || '–'}\nGrund: ${m.grund || '–'}`;
+
+  if (MAIL_SCRIPT_URL) {
+    try {
+      await sendViaScript({ to: VERSCHROTTUNG_RECIPIENT, subject, message, filename, mimeType: 'application/pdf', arrayBuffer });
+      return { method: 'auto' };
+    } catch (err) {
+      console.warn('Automatischer Mailversand fehlgeschlagen, Fallback auf Download+mailto:', err.message);
+    }
+  }
+  fallbackDownloadAndMail({ blob, filename, to: VERSCHROTTUNG_RECIPIENT, subject, message });
   return { method: 'download' };
 }

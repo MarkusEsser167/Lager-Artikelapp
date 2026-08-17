@@ -57,16 +57,13 @@ export const MeldungStore = {
     const store = await tx(STORE_MELDUNGEN, 'readwrite');
     return wrapReq(store.delete(id));
   },
-  async markExported(ids) {
+  async updateStatus(id, status) {
     const store = await tx(STORE_MELDUNGEN, 'readwrite');
-    const now = new Date().toISOString();
-    for (const id of ids) {
-      const rec = await wrapReq(store.get(id));
-      if (!rec) continue;
-      rec.status = 'exportiert';
-      rec.exportedAt = now;
-      store.put(rec);
-    }
+    const rec = await wrapReq(store.get(id));
+    if (!rec) return;
+    rec.status = status;
+    rec.sentAt = new Date().toISOString();
+    return wrapReq(store.put(rec));
   },
 };
 

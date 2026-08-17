@@ -4,12 +4,16 @@ Progressive Web App für Lagertablets: Meldung von Lagerplatzänderungen und Ver
 
 ## Funktionen
 
-- **Lagerplatzänderung melden** – Artikelnummer, bisheriger/neuer Lagerplatz, Menge, Bemerkung
-- **Verschrottung melden** – Artikelnummer, Lagerplatz, Grund, Foto, Bemerkung
+- **Lagerplatzänderung melden** – Artikelnummer, bisheriger/neuer Lagerplatz, Bemerkung. Wird beim
+  Absenden sofort als Excel-Datei an `muenster@wego-vti.de` gemailt.
+- **Verschrottung melden** – Artikelnummer, Menge, Grund, Foto, Bemerkung. Wird beim Absenden sofort als
+  PDF (mit eingebettetem Foto) an `Martin.Jochheim@wego-vti.de` gemailt.
+- Jede Meldung wird einzeln und sofort versendet, kein Sammel-Export nötig
 - Artikelnummer & Lagerplatz per Barcode-/QR-Scan über die Tablet-Kamera erfassbar, mit Suche/Vorschlagsliste aus hinterlegten Listen (Fallback: manuelle Eingabe)
-- Meldungen werden lokal auf dem Tablet gespeichert (IndexedDB) und sind offline nutzbar
-- Sammel-Export offener Meldungen als Excel-Datei, automatischer Mailversand an eine feste Adresse
-  (Fallback: Download + E-Mail-Entwurf, falls der automatische Versand nicht erreichbar ist)
+- Meldungen werden lokal auf dem Tablet gespeichert (IndexedDB, als Verlauf) und sind offline nutzbar –
+  bei fehlgeschlagenem automatischem Versand gibt es auf der Startseite einen „Erneut senden“-Button
+- Automatischer Mailversand über ein Google-Apps-Script-Webhook; Fallback: Download + E-Mail-Entwurf,
+  falls der automatische Versand nicht erreichbar ist (Anhang muss dann manuell hinzugefügt werden)
 
 ## Artikel- und Lagerplatzliste aktualisieren
 
@@ -33,10 +37,17 @@ weiterhin die zuletzt geladene Version.
 
 ## Automatischer Mailversand einrichten
 
-Der Export sendet die Excel-Datei automatisch per E-Mail über ein Google-Apps-Script-Webhook
-(`apps-script/Code.gs`) – analog zur bestehenden WeGo-VTI-Unfallaufnahme-App. Solange kein Script
-hinterlegt ist, fällt die App automatisch auf Download + vorausgefüllten E-Mail-Entwurf zurück
-(manuelles Anhängen nötig).
+Jede Meldung wird beim Absenden einzeln per E-Mail über ein Google-Apps-Script-Webhook
+(`apps-script/Code.gs`) verschickt – analog zur bestehenden WeGo-VTI-Unfallaufnahme-App. Empfänger und
+Format sind je nach Meldungstyp fest hinterlegt (`js/export.js`):
+
+| Meldungstyp | Empfänger | Format |
+|---|---|---|
+| Lagerplatzänderung | `muenster@wego-vti.de` | Excel (1 Zeile) |
+| Verschrottung | `Martin.Jochheim@wego-vti.de` | PDF mit eingebettetem Foto (`js/pdf.js`) |
+
+Solange kein Script hinterlegt ist, fällt die App automatisch auf Download + vorausgefüllten
+E-Mail-Entwurf zurück (Anhang muss dann manuell hinzugefügt werden).
 
 Einrichtung (einmalig):
 
@@ -48,9 +59,10 @@ Einrichtung (einmalig):
 5. Bei späteren Code-Änderungen am Script: „Bereitstellungen verwalten“ → Stift → **neue Version** →
    Bereitstellen (sonst läuft weiterhin der alte Code)
 
-**Bekanntes Risiko:** Bei der Unfallaufnahme-App wurden E-Mails vom Gmail-Absender an `@wego-vti.de`
-teils per SPF abgelehnt. Falls das bei `muenster@wego-vti.de` ebenfalls auftritt, muss die IT den
-Gmail-Absender freischalten.
+**Bekanntes Risiko:** Bei der Unfallaufnahme-App wurden E-Mails vom Gmail-Absender an manche
+`@wego-vti.de`-Adressen per SPF abgelehnt (bei `muenster@wego-vti.de` funktioniert es nachweislich).
+Falls das bei `Martin.Jochheim@wego-vti.de` ebenfalls auftritt, muss die IT den Gmail-Absender
+freischalten.
 
 ## Installation auf einem Tablet
 
