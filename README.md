@@ -14,14 +14,21 @@ Progressive Web App für Lagertablets: Meldung von Lagerplatzänderungen und Ver
 
 Die Vorschlagslisten für die Formulare liegen als Excel-Dateien im Repo:
 
-- `data/artikelliste.xlsx` – Spalten `Artikelnummer`, `Bezeichnung`
-- `data/lagerplatzliste.xlsx` – Spalte `Lagerplatz` (eine `Bezeichnung`-Spalte ist optional, wird aber aktuell nicht mitgeführt)
+- `data/artikelliste.xlsx` – SAP-Exportformat, Spalten `Material` (Artikelnummer) + beliebig viele
+  Text-Spalten (`Materialkurztext`, `Artikelkurztext 2`, `Materialkurztext 3`, …), die automatisch zu
+  einer Bezeichnung zusammengefügt werden. Aktuell ca. 153.000 Artikel.
+- `data/lagerplatzliste.xlsx` – Spalte `Lagerplatz` (eine `Bezeichnung`-Spalte ist optional, wird aber
+  aktuell nicht mitgeführt). Aktuell 234 Plätze.
 
-Um sie zu aktualisieren: auf GitHub in den Ordner `data/` gehen, die jeweilige Datei öffnen und über
-„Upload file“ durch eine neue Version mit denselben Spaltenüberschriften ersetzen (Commit direkt im
-Browser). Es ist **keine Code-Änderung** nötig – die App liest beim nächsten Laden automatisch die
-aktuelle Version. Tablets, die offline sind, nutzen bis zur nächsten Online-Verbindung weiterhin die
-zuletzt geladene Version.
+Erkannt werden außerdem die gängigen deutschen Varianten (`Artikelnummer`, `Bezeichnung`, `Beschreibung`
+usw.) – siehe `js/refData.js`. Nur die erste Spalte (Nummer/Platz) muss über einen dieser Namen erkennbar
+sein, weitere Spalten sind optional.
+
+Um eine Liste zu aktualisieren: auf GitHub in den Ordner `data/` gehen, die jeweilige Datei öffnen und über
+„Upload file“ durch eine neue Version mit denselben (oder erkennbaren) Spaltenüberschriften ersetzen
+(Commit direkt im Browser). Es ist **keine Code-Änderung** nötig – die App liest beim nächsten Laden
+automatisch die aktuelle Version. Tablets, die offline sind, nutzen bis zur nächsten Online-Verbindung
+weiterhin die zuletzt geladene Version.
 
 ## Installation auf einem Tablet
 

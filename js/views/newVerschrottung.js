@@ -18,7 +18,13 @@ export async function renderNewVerschrottung(container, router) {
   container.appendChild(backBtn);
   container.appendChild(header);
 
+  const loading = document.createElement('div');
+  loading.className = 'empty-state';
+  loading.textContent = 'Lade Artikel- und Lagerplatzliste…';
+  container.appendChild(loading);
+
   const [artikelListe, lagerplatzListe] = await Promise.all([loadArtikelListe(), loadLagerplatzListe()]);
+  loading.remove();
 
   const section = document.createElement('div');
   section.className = 'section';

@@ -26,7 +26,9 @@ export function scanField({ id, label, placeholder = '', items = null, valueKey,
     const showResults = (query) => {
       resultsBox.innerHTML = '';
       const q = query.trim().toLowerCase();
-      if (!q) return;
+      // Erst ab 2 Zeichen suchen – bei sehr großen Listen (z.B. 150.000+ Artikeln) wäre
+      // ein Treffer auf 1 Zeichen weder aussagekräftig noch beim Tippen flüssig.
+      if (q.length < 2) return;
       const matches = items
         .filter((it) => it[valueKey].toLowerCase().includes(q) || (it[labelKey] || '').toLowerCase().includes(q))
         .slice(0, 8);
@@ -45,7 +47,12 @@ export function scanField({ id, label, placeholder = '', items = null, valueKey,
       });
     };
 
-    input.addEventListener('input', () => showResults(input.value));
+    // Debounce: bei sehr großen Listen soll nicht bei jedem Tastendruck sofort gefiltert werden.
+    let debounceTimer = null;
+    input.addEventListener('input', () => {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => showResults(input.value), 150);
+    });
     input.addEventListener('blur', () => setTimeout(() => { resultsBox.innerHTML = ''; }, 150));
 
     const findExact = (value) => items.find((it) => it[valueKey].toLowerCase() === value.trim().toLowerCase());

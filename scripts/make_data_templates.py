@@ -1,9 +1,9 @@
-"""Erzeugt die Vorlage-Excel-Dateien für Artikel- und Lagerplatzliste.
+"""Referenz-Vorlagen für Artikel- und Lagerplatzliste (Spaltenformat).
 
-Diese Dateien liegen im Repo unter data/ und werden von der App beim Start geladen
-(js/refData.js). Sie können jederzeit direkt in GitHub durch eine aktuelle Version
-mit denselben Spaltenüberschriften ersetzt werden (Datei hochladen -> alte ersetzen),
-ohne dass am App-Code etwas geändert werden muss.
+data/artikelliste.xlsx und data/lagerplatzliste.xlsx enthalten inzwischen echte Daten
+und werden hier NICHT mehr automatisch erzeugt/überschrieben. Die Funktionen unten
+dienen nur noch als Referenz für das erwartete Spaltenformat, falls eine der Dateien
+mal komplett neu aufgebaut werden muss (z.B. call make_artikelliste("pfad.xlsx")).
 """
 from openpyxl import Workbook
 
@@ -18,8 +18,6 @@ def make_artikelliste(path):
     wb.save(path)
 
 def make_lagerplatzliste(path):
-    # Nur zur Referenz – data/lagerplatzliste.xlsx enthält inzwischen die echte
-    # Liste (eine Spalte "Lagerplatz", ohne Bezeichnung). Nicht überschreiben.
     wb = Workbook()
     ws = wb.active
     ws.title = "Lagerplaetze"
@@ -29,5 +27,6 @@ def make_lagerplatzliste(path):
     ws.append(["B-05-01"])
     wb.save(path)
 
-make_artikelliste("data/artikelliste.xlsx")
-print("done (lagerplatzliste.xlsx enthält bereits echte Daten und wird hier nicht neu erzeugt)")
+if __name__ == "__main__":
+    print("Nichts zu tun – data/*.xlsx enthalten bereits echte Daten. "
+          "Siehe Docstring, falls eine Vorlage neu erzeugt werden soll.")

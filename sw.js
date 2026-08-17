@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lager-meldung-v5';
+const CACHE_NAME = 'lager-meldung-v6';
 const PRECACHE = [
   './',
   './index.html',
@@ -45,10 +45,12 @@ self.addEventListener('fetch', (event) => {
   if (req.method !== 'GET' || url.origin !== self.location.origin) return;
 
   // Artikel-/Lagerplatzliste sollen möglichst aktuell sein, sobald online: hier zuerst das
-  // Netz versuchen und nur bei Offline auf die zuletzt zwischengespeicherte Version zurückfallen.
+  // Netz versuchen (normale HTTP-Validierung/ETag genügt – kein 'reload', da die Artikelliste
+  // mehrere MB groß sein kann und sonst bei jedem Öffnen komplett neu geladen würde) und nur
+  // bei Offline auf die zuletzt zwischengespeicherte Version zurückfallen.
   if (url.pathname.includes('/data/')) {
     event.respondWith(
-      fetch(req, { cache: 'reload' })
+      fetch(req)
         .then((res) => {
           if (res && res.ok) {
             const clone = res.clone();

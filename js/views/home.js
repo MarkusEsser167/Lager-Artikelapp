@@ -16,7 +16,7 @@ export async function renderHome(container, router) {
   container.appendChild(header);
 
   container.appendChild(melderBox());
-  container.appendChild(await refDataStatus());
+  container.appendChild(refDataStatus());
 
   const actions = document.createElement('div');
   actions.className = 'home-actions';
@@ -66,14 +66,18 @@ function melderBox() {
   return box;
 }
 
-async function refDataStatus() {
-  const [artikel, lagerplaetze] = await Promise.all([loadArtikelListe(), loadLagerplatzListe()]);
+// Lädt (bzw. liest aus dem Cache) im Hintergrund – blockiert den Seitenaufbau nicht,
+// da das Parsen der Artikelliste (aktuell ~150.000 Zeilen) einige Sekunden dauern kann.
+function refDataStatus() {
   const box = document.createElement('div');
   box.className = 'ref-data-status';
-  box.innerHTML = `
-    <span>${artikel.length ? `📋 Artikelliste: ${artikel.length} Artikel` : '⚠️ Artikelliste nicht gefunden (data/artikelliste.xlsx)'}</span>
-    <span>${lagerplaetze.length ? `📋 Lagerplatzliste: ${lagerplaetze.length} Plätze` : '⚠️ Lagerplatzliste nicht gefunden (data/lagerplatzliste.xlsx)'}</span>
-  `;
+  box.innerHTML = `<span>⏳ Lade Artikel- und Lagerplatzliste…</span>`;
+  Promise.all([loadArtikelListe(), loadLagerplatzListe()]).then(([artikel, lagerplaetze]) => {
+    box.innerHTML = `
+      <span>${artikel.length ? `📋 Artikelliste: ${artikel.length} Artikel` : '⚠️ Artikelliste nicht gefunden (data/artikelliste.xlsx)'}</span>
+      <span>${lagerplaetze.length ? `📋 Lagerplatzliste: ${lagerplaetze.length} Plätze` : '⚠️ Lagerplatzliste nicht gefunden (data/lagerplatzliste.xlsx)'}</span>
+    `;
+  });
   return box;
 }
 
