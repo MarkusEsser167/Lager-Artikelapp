@@ -1,10 +1,11 @@
 import { MeldungStore, getMelderName, setMelderName } from '../db.js';
-import { sendLagerplatzMeldung, sendVerschrottungMeldung } from '../export.js';
-import { loadArtikelListe, loadLagerplatzListe } from '../refData.js';
+import { sendLagerplatzMeldung, sendVerschrottungMeldung, sendLagerplatzkorrekturBatch } from '../export.js';
+import { loadArtikelListe, loadLagerplatzListe, loadArtikelLagerplatzListe } from '../refData.js';
 
 const TYPE_LABEL = {
   lagerplatz: { text: 'Lagerplatzänderung', cls: 'badge-lager', icon: '📦' },
   verschrottung: { text: 'Verschrottung', cls: 'badge-verschrottung', icon: '🗑️' },
+  lagerplatzkorrektur: { text: 'Lagerplatzkorrektur', cls: 'badge-lager', icon: '🔍' },
 };
 
 export async function renderHome(container, router) {
@@ -30,8 +31,14 @@ export async function renderHome(container, router) {
   verschrottungBtn.innerHTML = '🗑️<br>Verschrottung melden';
   verschrottungBtn.addEventListener('click', () => router.navigate('neu-verschrottung'));
 
+  const korrekturBtn = document.createElement('button');
+  korrekturBtn.className = 'btn btn-secondary btn-tile';
+  korrekturBtn.innerHTML = '🔍<br>Massen-Lagerplatzkorrektur';
+  korrekturBtn.addEventListener('click', () => router.navigate('massen-lagerplatzkorrektur'));
+
   actions.appendChild(lagerBtn);
   actions.appendChild(verschrottungBtn);
+  actions.appendChild(korrekturBtn);
   container.appendChild(actions);
 
   const meldungen = await MeldungStore.listMeldungen();
@@ -93,7 +100,9 @@ function meldungCard(m, container, router) {
   const sub =
     m.type === 'lagerplatz'
       ? `${m.altLagerplatz || '–'} → ${m.neuLagerplatz || '–'}`
-      : `${m.grund || '–'}${m.menge ? ' · ' + m.menge + ' Stk.' : ''}`;
+      : m.type === 'lagerplatzkorrektur'
+        ? `${m.bisherigerLagerplatz || '–'} → ${m.neuerLagerplatz || '–'}`
+        : `${m.grund || '–'}${m.menge ? ' · ' + m.menge + ' Stk.' : ''}`;
   card.innerHTML = `
     <div class="protocol-card-top">
       <span class="badge ${status.cls}">${status.text}</span>
@@ -114,8 +123,10 @@ function meldungCard(m, container, router) {
       retryBtn.disabled = true;
       retryBtn.textContent = 'Wird gesendet…';
       try {
-        const send = m.type === 'lagerplatz' ? sendLagerplatzMeldung : sendVerschrottungMeldung;
-        const result = await send(m);
+        const result =
+          m.type === 'lagerplatz' ? await sendLagerplatzMeldung(m)
+          : m.type === 'lagerplatzkorrektur' ? await sendLagerplatzkorrekturBatch([m])
+          : await sendVerschrottungMeldung(m);
         await MeldungStore.updateStatus(m.id, result.method === 'auto' ? 'gesendet' : 'manuell');
       } catch (err) {
         alert('Versand fehlgeschlagen: ' + err.message);

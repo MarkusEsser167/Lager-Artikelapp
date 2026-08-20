@@ -4,6 +4,7 @@
 // liest bei jedem Laden die aktuelle Version (Service Worker cached sie zusätzlich für offline).
 const ARTIKEL_URL = './data/artikelliste.xlsx';
 const LAGERPLATZ_URL = './data/lagerplatzliste.xlsx';
+const ARTIKEL_LAGERPLATZ_URL = './data/artikel-lagerplatz.xlsx';
 
 const ARTIKEL_ALIASES = {
   nummer: ['artikelnummer', 'artikel-nr', 'artikelnr', 'nummer', 'artikel', 'material', 'materialnummer'],
@@ -18,6 +19,13 @@ const ARTIKEL_ALIASES = {
 const LAGERPLATZ_ALIASES = {
   code: ['lagerplatz', 'platz', 'code', 'lagerplatz-code', 'lagerplatzcode'],
   bezeichnung: ['bezeichnung', 'bereich', 'zone', 'beschreibung'],
+};
+// Referenzliste für die Massen-Lagerplatzkorrektur: welcher Artikel steht laut System
+// aktuell auf welchem Lagerplatz (z.B. SAP-Export mit zusätzlicher Lagerplatz-Spalte).
+const ARTIKEL_LAGERPLATZ_ALIASES = {
+  nummer: ARTIKEL_ALIASES.nummer,
+  bezeichnung: ARTIKEL_ALIASES.bezeichnung,
+  lagerplatz: LAGERPLATZ_ALIASES.code,
 };
 
 async function fetchWorkbook(url) {
@@ -65,6 +73,7 @@ function parseSheet(wb, aliasMap) {
 // Aufrufe (z.B. Startseite + direkt geöffnetes Formular) sich einen Ladevorgang teilen.
 let artikelPromise = null;
 let lagerplatzPromise = null;
+let artikelLagerplatzPromise = null;
 
 export function loadArtikelListe() {
   if (!artikelPromise) {
@@ -88,4 +97,16 @@ export function loadLagerplatzListe() {
       });
   }
   return lagerplatzPromise;
+}
+
+export function loadArtikelLagerplatzListe() {
+  if (!artikelLagerplatzPromise) {
+    artikelLagerplatzPromise = fetchWorkbook(ARTIKEL_LAGERPLATZ_URL)
+      .then((wb) => parseSheet(wb, ARTIKEL_LAGERPLATZ_ALIASES))
+      .catch((err) => {
+        console.warn('Artikel-Lagerplatz-Referenzliste konnte nicht geladen werden:', err.message);
+        return [];
+      });
+  }
+  return artikelLagerplatzPromise;
 }

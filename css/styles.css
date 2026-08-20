@@ -144,6 +144,23 @@ h3 { margin: 0; }
   padding: 14px;
   margin-bottom: 14px;
 }
+.section-title {
+  margin: 0 0 12px;
+  font-size: 1.02rem;
+  color: var(--brand-dark);
+  border-bottom: 2px solid var(--brand-dark);
+  padding-bottom: 6px;
+}
+
+.vehicle-selected {
+  margin-top: 10px;
+  margin-bottom: 14px;
+  background: #eef6ff;
+  border: 1px solid #bfdcf5;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 0.9rem;
+}
 
 .field { margin-bottom: 14px; }
 .field-label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 5px; color: var(--text); }

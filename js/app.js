@@ -1,6 +1,7 @@
 import { renderHome } from './views/home.js';
 import { renderNewLagerplatz } from './views/newLagerplatz.js';
 import { renderNewVerschrottung } from './views/newVerschrottung.js';
+import { renderNewMassenkorrektur } from './views/newMassenkorrektur.js';
 
 const appEl = document.getElementById('app');
 
@@ -22,6 +23,8 @@ async function route() {
       await renderNewLagerplatz(appEl, router);
     } else if (head === 'neu-verschrottung') {
       await renderNewVerschrottung(appEl, router);
+    } else if (head === 'massen-lagerplatzkorrektur') {
+      await renderNewMassenkorrektur(appEl, router);
     } else {
       await renderHome(appEl, router);
     }

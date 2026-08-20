@@ -4,6 +4,7 @@ import { formatDate } from './format.js';
 
 const LAGERPLATZ_RECIPIENT = 'muenster@wego-vti.de';
 const VERSCHROTTUNG_RECIPIENT = 'Martin.Jochheim@wego-vti.de';
+const LAGERPLATZKORREKTUR_RECIPIENT = 'muenster@wego-vti.de';
 
 // Google-Apps-Script-Webhook (siehe apps-script/Code.gs), der den Anhang automatisch per
 // GmailApp verschickt – analog zur bestehenden WeGo-VTI-Unfallaufnahme-App. Leer lassen,
@@ -106,5 +107,40 @@ export async function sendVerschrottungMeldung(m) {
     }
   }
   fallbackDownloadAndMail({ blob, filename, to: VERSCHROTTUNG_RECIPIENT, subject, message });
+  return { method: 'download' };
+}
+
+// Sendet eine oder mehrere Lagerplatzkorrekturen als eine gesammelte Excel-Datei (eine Zeile
+// je Korrektur). Wird sowohl von der Massen-Lagerplatzkorrektur-Übersicht (mehrere Zeilen auf
+// einmal) als auch vom "Erneut senden"-Button auf der Startseite (eine einzelne Meldung) genutzt.
+export async function sendLagerplatzkorrekturBatch(meldungen) {
+  const wb = window.XLSX.utils.book_new();
+  const rows = meldungen.map((m) => ({
+    Datum: formatDate(m.createdAt),
+    Artikelnummer: m.artikelnummer || '',
+    Artikelbezeichnung: m.artikelbezeichnung || '',
+    'Bisheriger Lagerplatz (System)': m.bisherigerLagerplatz || '',
+    'Neuer Lagerplatz (Ist)': m.neuerLagerplatz || '',
+    'Gemeldet von': m.melder || '',
+  }));
+  const ws = window.XLSX.utils.json_to_sheet(rows);
+  window.XLSX.utils.book_append_sheet(wb, ws, 'Lagerplatzkorrektur');
+  const arrayBuffer = window.XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+  const blob = new Blob([arrayBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+
+  const stamp = new Date().toISOString().replace(/[:T]/g, '-').slice(0, 16);
+  const filename = `Lagerplatzkorrektur_${stamp}.xlsx`;
+  const subject = `Massen-Lagerplatzkorrektur – ${meldungen.length} Artikel`;
+  const message = `Lagerplatzkorrektur zur Inventurvorbereitung, ${meldungen.length} Artikel im Anhang.`;
+
+  if (MAIL_SCRIPT_URL) {
+    try {
+      await sendViaScript({ to: LAGERPLATZKORREKTUR_RECIPIENT, subject, message, filename, mimeType: blob.type, arrayBuffer });
+      return { method: 'auto' };
+    } catch (err) {
+      console.warn('Automatischer Mailversand fehlgeschlagen, Fallback auf Download+mailto:', err.message);
+    }
+  }
+  fallbackDownloadAndMail({ blob, filename, to: LAGERPLATZKORREKTUR_RECIPIENT, subject, message });
   return { method: 'download' };
 }

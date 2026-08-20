@@ -8,7 +8,10 @@ Progressive Web App für Lagertablets: Meldung von Lagerplatzänderungen und Ver
   Absenden sofort als Excel-Datei an `muenster@wego-vti.de` gemailt.
 - **Verschrottung melden** – Artikelnummer, Menge, Grund, Foto, Bemerkung. Wird beim Absenden sofort als
   PDF (mit eingebettetem Foto) an `Martin.Jochheim@wego-vti.de` gemailt.
-- Jede Meldung wird einzeln und sofort versendet, kein Sammel-Export nötig
+- **Massen-Lagerplatzkorrektur** – zur Inventurvorbereitung: Artikel scannen, aktuellen Lagerplatz laut
+  System (`data/artikel-lagerplatz.xlsx`) prüfen und ggf. korrigieren. Mehrere Korrekturen werden auf
+  der Seite gesammelt und gemeinsam als eine Excel-Datei an `muenster@wego-vti.de` gesendet.
+- Lagerplatzänderung und Verschrottung werden einzeln und sofort versendet, kein Sammel-Export nötig
 - Artikelnummer & Lagerplatz per Barcode-/QR-Scan über die Tablet-Kamera erfassbar, mit Suche/Vorschlagsliste aus hinterlegten Listen (Fallback: manuelle Eingabe)
 - Meldungen werden lokal auf dem Tablet gespeichert (IndexedDB, als Verlauf) und sind offline nutzbar –
   bei fehlgeschlagenem automatischem Versand gibt es auf der Startseite einen „Erneut senden“-Button
@@ -24,6 +27,9 @@ Die Vorschlagslisten für die Formulare liegen als Excel-Dateien im Repo:
   einer Bezeichnung zusammengefügt werden. Aktuell ca. 153.000 Artikel.
 - `data/lagerplatzliste.xlsx` – Spalte `Lagerplatz` (eine `Bezeichnung`-Spalte ist optional, wird aber
   aktuell nicht mitgeführt). Aktuell 234 Plätze.
+- `data/artikel-lagerplatz.xlsx` – nur für die Massen-Lagerplatzkorrektur: welcher Artikel steht laut
+  System aktuell auf welchem Lagerplatz (Spalten wie `artikelliste.xlsx` + `Lagerplatz`). Aktuell ca.
+  1.600 Artikel (Filiale/Lager „106“).
 
 Erkannt werden außerdem die gängigen deutschen Varianten (`Artikelnummer`, `Bezeichnung`, `Beschreibung`
 usw.) – siehe `js/refData.js`. Nur die erste Spalte (Nummer/Platz) muss über einen dieser Namen erkennbar
@@ -45,6 +51,7 @@ Format sind je nach Meldungstyp fest hinterlegt (`js/export.js`):
 |---|---|---|
 | Lagerplatzänderung | `muenster@wego-vti.de` | Excel (1 Zeile) |
 | Verschrottung | `Martin.Jochheim@wego-vti.de` | PDF mit eingebettetem Foto (`js/pdf.js`) |
+| Massen-Lagerplatzkorrektur | `muenster@wego-vti.de` | Excel (1 Zeile je erfasster Korrektur, gesammelt) |
 
 Solange kein Script hinterlegt ist, fällt die App automatisch auf Download + vorausgefüllten
 E-Mail-Entwurf zurück (Anhang muss dann manuell hinzugefügt werden).

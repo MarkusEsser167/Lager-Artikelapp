@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lager-meldung-v9';
+const CACHE_NAME = 'lager-meldung-v10';
 const PRECACHE = [
   './',
   './index.html',
@@ -17,6 +17,7 @@ const PRECACHE = [
   './js/views/home.js',
   './js/views/newLagerplatz.js',
   './js/views/newVerschrottung.js',
+  './js/views/newMassenkorrektur.js',
   './vendor/xlsx.full.min.js',
   './vendor/jspdf.umd.min.js',
   './icons/icon-192.png',
