@@ -65,7 +65,7 @@ export async function renderNewLagerplatz(container, router) {
   const bemerkung = simpleField({ id: 'bemerkung', label: 'Bemerkung (optional)', textarea: true });
   section.appendChild(bemerkung.wrap);
 
-  const melder = simpleField({ id: 'melder', label: 'Gemeldet von' });
+  const melder = simpleField({ id: 'melder', label: 'Gemeldet von *' });
   melder.input.value = getMelderName();
   section.appendChild(melder.wrap);
 
@@ -82,6 +82,11 @@ export async function renderNewLagerplatz(container, router) {
     }
     if (!altPlatz.input.value.trim() || !neuPlatz.input.value.trim()) {
       alert('Bitte bisherigen und neuen Lagerplatz angeben.');
+      return;
+    }
+    if (!melder.input.value.trim()) {
+      alert('Bitte deinen Namen angeben.');
+      melder.input.focus();
       return;
     }
     setMelderName(melder.input.value.trim());

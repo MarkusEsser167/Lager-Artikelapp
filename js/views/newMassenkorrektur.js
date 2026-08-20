@@ -85,6 +85,10 @@ export async function renderNewMassenkorrektur(container, router) {
   });
   section.appendChild(neuPlatz.wrap);
 
+  const melder = simpleField({ id: 'melder', label: 'Gemeldet von *' });
+  melder.input.value = getMelderName();
+  section.appendChild(melder.wrap);
+
   const addBtn = document.createElement('button');
   addBtn.className = 'btn btn-primary btn-block';
   addBtn.textContent = '+ Zur Liste hinzufügen';
@@ -99,6 +103,12 @@ export async function renderNewMassenkorrektur(container, router) {
       neuPlatz.input.focus();
       return;
     }
+    if (!melder.input.value.trim()) {
+      alert('Bitte deinen Namen angeben.');
+      melder.input.focus();
+      return;
+    }
+    setMelderName(melder.input.value.trim());
     await MeldungStore.saveMeldung({
       id: newId(),
       type: 'lagerplatzkorrektur',
@@ -108,7 +118,7 @@ export async function renderNewMassenkorrektur(container, router) {
       artikelbezeichnung: currentMatch ? currentMatch.bezeichnung : '',
       bisherigerLagerplatz: currentMatch ? currentMatch.lagerplatz : '',
       neuerLagerplatz: neuPlatz.input.value.trim(),
-      melder: getMelderName(),
+      melder: melder.input.value.trim(),
     });
     artikel.input.value = '';
     neuPlatz.input.value = '';
@@ -195,6 +205,14 @@ export async function renderNewMassenkorrektur(container, router) {
 
   await refreshList();
   artikel.input.focus();
+}
+
+function simpleField({ id, label, type = 'text' }) {
+  const wrap = document.createElement('div');
+  wrap.className = 'field';
+  wrap.innerHTML = `<label class="field-label" for="${id}">${label}</label><input id="${id}" type="${type}" autocomplete="off" />`;
+  const input = wrap.querySelector('input');
+  return { wrap, input };
 }
 
 function escapeHtml(s) {

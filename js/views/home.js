@@ -62,7 +62,7 @@ function melderBox() {
   box.className = 'melder-box';
   const current = getMelderName();
   box.innerHTML = `
-    <label class="field-label" for="melder-input">Gemeldet von</label>
+    <label class="field-label" for="melder-input">Gemeldet von *</label>
     <input id="melder-input" type="text" placeholder="Name eingeben" value="${escapeAttr(current)}" />
   `;
   const input = box.querySelector('#melder-input');

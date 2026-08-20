@@ -99,7 +99,7 @@ export async function renderNewVerschrottung(container, router) {
   photoWrap.appendChild(photoPreview);
   section.appendChild(photoWrap);
 
-  const melder = simpleField({ id: 'melder', label: 'Gemeldet von' });
+  const melder = simpleField({ id: 'melder', label: 'Gemeldet von *' });
   melder.input.value = getMelderName();
   section.appendChild(melder.wrap);
 
@@ -121,6 +121,11 @@ export async function renderNewVerschrottung(container, router) {
     if (selectedGrund === 'Sonstiges' && !sonstiges.input.value.trim()) {
       alert('Bitte den Grund im Freitext angeben.');
       sonstiges.input.focus();
+      return;
+    }
+    if (!melder.input.value.trim()) {
+      alert('Bitte deinen Namen angeben.');
+      melder.input.focus();
       return;
     }
     setMelderName(melder.input.value.trim());
