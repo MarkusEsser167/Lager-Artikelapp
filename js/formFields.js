@@ -74,3 +74,29 @@ export function scanField({ id, label, placeholder = '', items = null, valueKey,
 
   return { wrap, input };
 }
+
+// Baut ein <select> mit fester Optionsliste (z.B. Mitarbeiterliste) – bewusst kein Textfeld,
+// damit keine Freitext-Eingabe möglich ist. value wird nur vorbelegt, wenn sie tatsächlich in
+// der aktuellen Optionsliste vorkommt (z.B. falls ein Mitarbeiter zwischenzeitlich entfernt wurde).
+export function selectField({ id, label, options = [], value = '', placeholder = '– Bitte wählen –' }) {
+  const wrap = document.createElement('div');
+  wrap.className = 'field';
+  const optionsHtml = options.map((o) => `<option value="${escapeAttr(o)}">${escapeHtml(o)}</option>`).join('');
+  wrap.innerHTML = `
+    <label class="field-label" for="${id}">${label}</label>
+    <select id="${id}">
+      <option value="">${escapeHtml(placeholder)}</option>
+      ${optionsHtml}
+    </select>
+  `;
+  const input = wrap.querySelector('select');
+  if (value && options.includes(value)) input.value = value;
+  return { wrap, input };
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+function escapeAttr(s) {
+  return escapeHtml(s);
+}

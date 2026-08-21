@@ -1,6 +1,6 @@
 import { MeldungStore, getMelderName, setMelderName } from '../db.js';
 import { sendLagerplatzMeldung, sendVerschrottungMeldung, sendLagerplatzkorrekturBatch } from '../export.js';
-import { loadArtikelListe, loadLagerplatzListe, loadArtikelLagerplatzListe } from '../refData.js';
+import { loadArtikelListe, loadLagerplatzListe, loadArtikelLagerplatzListe, loadMitarbeiterListe } from '../refData.js';
 
 const TYPE_LABEL = {
   lagerplatz: { text: 'Lagerplatzänderung', cls: 'badge-lager', icon: '📦' },
@@ -57,16 +57,23 @@ export async function renderHome(container, router) {
   }
 }
 
+// Auswahl statt Freitext, damit es keine anonymen Meldungen gibt – die Liste lädt im
+// Hintergrund (blockiert den Seitenaufbau nicht), das Select zeigt bis dahin "Lädt…".
 function melderBox() {
   const box = document.createElement('div');
   box.className = 'melder-box';
   const current = getMelderName();
   box.innerHTML = `
     <label class="field-label" for="melder-input">Gemeldet von *</label>
-    <input id="melder-input" type="text" placeholder="Name eingeben" value="${escapeAttr(current)}" />
+    <select id="melder-input"><option value="">Lädt…</option></select>
   `;
-  const input = box.querySelector('#melder-input');
-  input.addEventListener('change', () => setMelderName(input.value.trim()));
+  const select = box.querySelector('#melder-input');
+  select.addEventListener('change', () => setMelderName(select.value));
+  loadMitarbeiterListe().then((namen) => {
+    const optionsHtml = namen.map((n) => `<option value="${escapeAttr(n)}">${escapeHtml(n)}</option>`).join('');
+    select.innerHTML = `<option value="">– Bitte wählen –</option>${optionsHtml}`;
+    if (current && namen.includes(current)) select.value = current;
+  });
   return box;
 }
 

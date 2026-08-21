@@ -5,6 +5,7 @@
 const ARTIKEL_URL = './data/artikelliste.xlsx';
 const LAGERPLATZ_URL = './data/lagerplatzliste.xlsx';
 const ARTIKEL_LAGERPLATZ_URL = './data/artikel-lagerplatz.xlsx';
+const MITARBEITER_URL = './data/mitarbeiter.xlsx';
 
 const ARTIKEL_ALIASES = {
   nummer: ['artikelnummer', 'artikel-nr', 'artikelnr', 'nummer', 'artikel', 'material', 'materialnummer'],
@@ -26,6 +27,10 @@ const ARTIKEL_LAGERPLATZ_ALIASES = {
   nummer: ARTIKEL_ALIASES.nummer,
   bezeichnung: ARTIKEL_ALIASES.bezeichnung,
   lagerplatz: LAGERPLATZ_ALIASES.code,
+};
+// Mitarbeiterliste für die "Gemeldet von"-Auswahl (kein Freitext mehr möglich).
+const MITARBEITER_ALIASES = {
+  name: ['name', 'mitarbeiter', 'melder', 'benutzer'],
 };
 
 async function fetchWorkbook(url) {
@@ -74,6 +79,7 @@ function parseSheet(wb, aliasMap) {
 let artikelPromise = null;
 let lagerplatzPromise = null;
 let artikelLagerplatzPromise = null;
+let mitarbeiterPromise = null;
 
 export function loadArtikelListe() {
   if (!artikelPromise) {
@@ -109,4 +115,18 @@ export function loadArtikelLagerplatzListe() {
       });
   }
   return artikelLagerplatzPromise;
+}
+
+// Gibt eine einfache Liste von Namen zurück (nicht Objekte wie die anderen Listen), da sie
+// direkt als <select>-Optionen für die "Gemeldet von"-Auswahl verwendet wird.
+export function loadMitarbeiterListe() {
+  if (!mitarbeiterPromise) {
+    mitarbeiterPromise = fetchWorkbook(MITARBEITER_URL)
+      .then((wb) => parseSheet(wb, MITARBEITER_ALIASES).map((item) => item.name))
+      .catch((err) => {
+        console.warn('Mitarbeiterliste konnte nicht geladen werden:', err.message);
+        return [];
+      });
+  }
+  return mitarbeiterPromise;
 }

@@ -1,6 +1,6 @@
 import { MeldungStore, newId, getMelderName, setMelderName } from '../db.js';
-import { scanField } from '../formFields.js';
-import { loadArtikelLagerplatzListe, loadLagerplatzListe } from '../refData.js';
+import { scanField, selectField } from '../formFields.js';
+import { loadArtikelLagerplatzListe, loadLagerplatzListe, loadMitarbeiterListe } from '../refData.js';
 import { sendLagerplatzkorrekturBatch } from '../export.js';
 
 export async function renderNewMassenkorrektur(container, router) {
@@ -24,9 +24,10 @@ export async function renderNewMassenkorrektur(container, router) {
   loading.textContent = 'Lade Referenzlisten…';
   container.appendChild(loading);
 
-  const [artikelLagerplatzListe, lagerplatzListe] = await Promise.all([
+  const [artikelLagerplatzListe, lagerplatzListe, mitarbeiterListe] = await Promise.all([
     loadArtikelLagerplatzListe(),
     loadLagerplatzListe(),
+    loadMitarbeiterListe(),
   ]);
   loading.remove();
 
@@ -35,6 +36,7 @@ export async function renderNewMassenkorrektur(container, router) {
   status.innerHTML = `
     <span>${artikelLagerplatzListe.length ? `📋 Referenzliste: ${artikelLagerplatzListe.length} Artikel mit Lagerplatz` : '⚠️ Referenzliste nicht gefunden (data/artikel-lagerplatz.xlsx)'}</span>
     <span>${lagerplatzListe.length ? `📋 Lagerplatzliste: ${lagerplatzListe.length} Plätze` : '⚠️ Lagerplatzliste nicht gefunden (data/lagerplatzliste.xlsx)'}</span>
+    <span>${mitarbeiterListe.length ? `📋 Mitarbeiterliste: ${mitarbeiterListe.length} Personen` : '⚠️ Mitarbeiterliste nicht gefunden (data/mitarbeiter.xlsx)'}</span>
   `;
   container.appendChild(status);
 
@@ -85,8 +87,7 @@ export async function renderNewMassenkorrektur(container, router) {
   });
   section.appendChild(neuPlatz.wrap);
 
-  const melder = simpleField({ id: 'melder', label: 'Gemeldet von *' });
-  melder.input.value = getMelderName();
+  const melder = selectField({ id: 'melder', label: 'Gemeldet von *', options: mitarbeiterListe, value: getMelderName() });
   section.appendChild(melder.wrap);
 
   const addBtn = document.createElement('button');
@@ -103,12 +104,12 @@ export async function renderNewMassenkorrektur(container, router) {
       neuPlatz.input.focus();
       return;
     }
-    if (!melder.input.value.trim()) {
-      alert('Bitte deinen Namen angeben.');
+    if (!melder.input.value) {
+      alert('Bitte deinen Namen auswählen.');
       melder.input.focus();
       return;
     }
-    setMelderName(melder.input.value.trim());
+    setMelderName(melder.input.value);
     await MeldungStore.saveMeldung({
       id: newId(),
       type: 'lagerplatzkorrektur',
@@ -118,7 +119,7 @@ export async function renderNewMassenkorrektur(container, router) {
       artikelbezeichnung: currentMatch ? currentMatch.bezeichnung : '',
       bisherigerLagerplatz: currentMatch ? currentMatch.lagerplatz : '',
       neuerLagerplatz: neuPlatz.input.value.trim(),
-      melder: melder.input.value.trim(),
+      melder: melder.input.value,
     });
     artikel.input.value = '';
     neuPlatz.input.value = '';
@@ -205,14 +206,6 @@ export async function renderNewMassenkorrektur(container, router) {
 
   await refreshList();
   artikel.input.focus();
-}
-
-function simpleField({ id, label, type = 'text' }) {
-  const wrap = document.createElement('div');
-  wrap.className = 'field';
-  wrap.innerHTML = `<label class="field-label" for="${id}">${label}</label><input id="${id}" type="${type}" autocomplete="off" />`;
-  const input = wrap.querySelector('input');
-  return { wrap, input };
 }
 
 function escapeHtml(s) {

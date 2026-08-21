@@ -1,6 +1,6 @@
 import { MeldungStore, newId, getMelderName, setMelderName } from '../db.js';
-import { scanField } from '../formFields.js';
-import { loadArtikelListe, loadLagerplatzListe } from '../refData.js';
+import { scanField, selectField } from '../formFields.js';
+import { loadArtikelListe, loadLagerplatzListe, loadMitarbeiterListe } from '../refData.js';
 import { sendLagerplatzMeldung } from '../export.js';
 
 export async function renderNewLagerplatz(container, router) {
@@ -18,10 +18,14 @@ export async function renderNewLagerplatz(container, router) {
 
   const loading = document.createElement('div');
   loading.className = 'empty-state';
-  loading.textContent = 'Lade Artikel- und Lagerplatzliste…';
+  loading.textContent = 'Lade Artikel-, Lagerplatz- und Mitarbeiterliste…';
   container.appendChild(loading);
 
-  const [artikelListe, lagerplatzListe] = await Promise.all([loadArtikelListe(), loadLagerplatzListe()]);
+  const [artikelListe, lagerplatzListe, mitarbeiterListe] = await Promise.all([
+    loadArtikelListe(),
+    loadLagerplatzListe(),
+    loadMitarbeiterListe(),
+  ]);
   loading.remove();
 
   const section = document.createElement('div');
@@ -65,8 +69,7 @@ export async function renderNewLagerplatz(container, router) {
   const bemerkung = simpleField({ id: 'bemerkung', label: 'Bemerkung (optional)', textarea: true });
   section.appendChild(bemerkung.wrap);
 
-  const melder = simpleField({ id: 'melder', label: 'Gemeldet von *' });
-  melder.input.value = getMelderName();
+  const melder = selectField({ id: 'melder', label: 'Gemeldet von *', options: mitarbeiterListe, value: getMelderName() });
   section.appendChild(melder.wrap);
 
   const actionBar = document.createElement('div');
@@ -84,12 +87,12 @@ export async function renderNewLagerplatz(container, router) {
       alert('Bitte bisherigen und neuen Lagerplatz angeben.');
       return;
     }
-    if (!melder.input.value.trim()) {
-      alert('Bitte deinen Namen angeben.');
+    if (!melder.input.value) {
+      alert('Bitte deinen Namen auswählen.');
       melder.input.focus();
       return;
     }
-    setMelderName(melder.input.value.trim());
+    setMelderName(melder.input.value);
     saveBtn.disabled = true;
     saveBtn.textContent = 'Wird gesendet…';
     const meldung = {
@@ -102,7 +105,7 @@ export async function renderNewLagerplatz(container, router) {
       altLagerplatz: altPlatz.input.value.trim(),
       neuLagerplatz: neuPlatz.input.value.trim(),
       bemerkung: bemerkung.input.value.trim(),
-      melder: melder.input.value.trim(),
+      melder: melder.input.value,
     };
     await MeldungStore.saveMeldung(meldung);
     try {

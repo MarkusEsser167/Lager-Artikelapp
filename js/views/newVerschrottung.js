@@ -1,7 +1,7 @@
 import { MeldungStore, newId, getMelderName, setMelderName } from '../db.js';
-import { scanField } from '../formFields.js';
+import { scanField, selectField } from '../formFields.js';
 import { pickPhoto } from '../camera.js';
-import { loadArtikelListe } from '../refData.js';
+import { loadArtikelListe, loadMitarbeiterListe } from '../refData.js';
 import { sendVerschrottungMeldung } from '../export.js';
 
 const GRUENDE = ['Beschädigt', 'Abgelaufen/verdorben', 'Falschlieferung', 'Retoure defekt', 'Sonstiges'];
@@ -21,10 +21,10 @@ export async function renderNewVerschrottung(container, router) {
 
   const loading = document.createElement('div');
   loading.className = 'empty-state';
-  loading.textContent = 'Lade Artikelliste…';
+  loading.textContent = 'Lade Artikel- und Mitarbeiterliste…';
   container.appendChild(loading);
 
-  const artikelListe = await loadArtikelListe();
+  const [artikelListe, mitarbeiterListe] = await Promise.all([loadArtikelListe(), loadMitarbeiterListe()]);
   loading.remove();
 
   const section = document.createElement('div');
@@ -99,8 +99,7 @@ export async function renderNewVerschrottung(container, router) {
   photoWrap.appendChild(photoPreview);
   section.appendChild(photoWrap);
 
-  const melder = simpleField({ id: 'melder', label: 'Gemeldet von *' });
-  melder.input.value = getMelderName();
+  const melder = selectField({ id: 'melder', label: 'Gemeldet von *', options: mitarbeiterListe, value: getMelderName() });
   section.appendChild(melder.wrap);
 
   const actionBar = document.createElement('div');
@@ -123,12 +122,12 @@ export async function renderNewVerschrottung(container, router) {
       sonstiges.input.focus();
       return;
     }
-    if (!melder.input.value.trim()) {
-      alert('Bitte deinen Namen angeben.');
+    if (!melder.input.value) {
+      alert('Bitte deinen Namen auswählen.');
       melder.input.focus();
       return;
     }
-    setMelderName(melder.input.value.trim());
+    setMelderName(melder.input.value);
     saveBtn.disabled = true;
     saveBtn.textContent = 'Wird gesendet…';
     const meldung = {
@@ -143,7 +142,7 @@ export async function renderNewVerschrottung(container, router) {
       grundSonstiges: sonstiges.input.value.trim(),
       bemerkung: bemerkung.input.value.trim(),
       foto: photoDataUrl,
-      melder: melder.input.value.trim(),
+      melder: melder.input.value,
     };
     await MeldungStore.saveMeldung(meldung);
     try {

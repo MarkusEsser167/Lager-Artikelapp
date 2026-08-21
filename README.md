@@ -13,6 +13,8 @@ Progressive Web App für Lagertablets: Meldung von Lagerplatzänderungen und Ver
   der Seite gesammelt und gemeinsam als eine Excel-Datei an `muenster@wego-vti.de` gesendet.
 - Lagerplatzänderung und Verschrottung werden einzeln und sofort versendet, kein Sammel-Export nötig
 - Artikelnummer & Lagerplatz per Barcode-/QR-Scan über die Tablet-Kamera erfassbar, mit Suche/Vorschlagsliste aus hinterlegten Listen (Fallback: manuelle Eingabe)
+- „Gemeldet von“ ist überall eine Pflicht-Auswahl aus der Mitarbeiterliste (`data/mitarbeiter.xlsx`) –
+  keine Freitext-Eingabe, damit es keine anonymen Meldungen gibt
 - Meldungen werden lokal auf dem Tablet gespeichert (IndexedDB, als Verlauf) und sind offline nutzbar –
   bei fehlgeschlagenem automatischem Versand gibt es auf der Startseite einen „Erneut senden“-Button
 - Automatischer Mailversand über ein Google-Apps-Script-Webhook; Fallback: Download + E-Mail-Entwurf,
@@ -30,6 +32,8 @@ Die Vorschlagslisten für die Formulare liegen als Excel-Dateien im Repo:
 - `data/artikel-lagerplatz.xlsx` – nur für die Massen-Lagerplatzkorrektur: welcher Artikel steht laut
   System aktuell auf welchem Lagerplatz (Spalten wie `artikelliste.xlsx` + `Lagerplatz`). Aktuell ca.
   1.600 Artikel (Filiale/Lager „106“).
+- `data/mitarbeiter.xlsx` – Spalte `Name`, füllt die „Gemeldet von“-Auswahl in allen Formularen (kein
+  Freitext möglich). Bei Personalwechsel hier einfach Namen ergänzen/entfernen.
 
 Erkannt werden außerdem die gängigen deutschen Varianten (`Artikelnummer`, `Bezeichnung`, `Beschreibung`
 usw.) – siehe `js/refData.js`. Nur die erste Spalte (Nummer/Platz) muss über einen dieser Namen erkennbar
