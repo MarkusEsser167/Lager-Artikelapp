@@ -63,7 +63,6 @@ export async function sendLagerplatzMeldung(m) {
     Datum: formatDate(m.createdAt),
     Artikelnummer: m.artikelnummer || '',
     Artikelbezeichnung: m.artikelbezeichnung || '',
-    'Bisheriger Lagerplatz': m.altLagerplatz || '',
     'Neuer Lagerplatz': m.neuLagerplatz || '',
     Bemerkung: m.bemerkung || '',
     'Gemeldet von': m.melder || '',
@@ -76,7 +75,7 @@ export async function sendLagerplatzMeldung(m) {
   const safeArtikel = (m.artikelnummer || 'artikel').replace(/[^a-zA-Z0-9_-]+/g, '_');
   const filename = `Lagerplatzaenderung_${safeArtikel}_${m.id}.xlsx`;
   const subject = `Lagerplatzänderung – ${m.artikelnummer || 'ohne Artikelnummer'}`;
-  const message = `Lagerplatzänderung gemeldet von ${m.melder || '–'}.\nArtikel: ${m.artikelnummer || '–'}\n${m.altLagerplatz || '–'} → ${m.neuLagerplatz || '–'}`;
+  const message = `Lagerplatzänderung gemeldet von ${m.melder || '–'}.\nArtikel: ${m.artikelnummer || '–'}\nNeuer Lagerplatz: ${m.neuLagerplatz || '–'}`;
 
   if (MAIL_SCRIPT_URL) {
     try {
@@ -110,21 +109,26 @@ export async function sendVerschrottungMeldung(m) {
   return { method: 'download' };
 }
 
+// SAP-Massenupload-Format für Lagerort-Änderungen (fest vorgegeben, siehe
+// "Lageraort Massen - Ausgabeliste.xlsx"): MATNR=Artikelnummer, WERKS/LGORT fest "106",
+// LGPBE=neuer Lagerplatz. Keine weiteren Spalten – die Datei geht direkt in den SAP-Upload,
+// zusätzliche Spalten würden ihn vermutlich zum Scheitern bringen.
+const SAP_WERK = '106';
+const SAP_LGORT = '106';
+
 // Sendet eine oder mehrere Lagerplatzkorrekturen als eine gesammelte Excel-Datei (eine Zeile
 // je Korrektur). Wird sowohl von der Massen-Lagerplatzkorrektur-Übersicht (mehrere Zeilen auf
 // einmal) als auch vom "Erneut senden"-Button auf der Startseite (eine einzelne Meldung) genutzt.
 export async function sendLagerplatzkorrekturBatch(meldungen) {
   const wb = window.XLSX.utils.book_new();
   const rows = meldungen.map((m) => ({
-    Datum: formatDate(m.createdAt),
-    Artikelnummer: m.artikelnummer || '',
-    Artikelbezeichnung: m.artikelbezeichnung || '',
-    'Bisheriger Lagerplatz (System)': m.bisherigerLagerplatz || '',
-    'Neuer Lagerplatz (Ist)': m.neuerLagerplatz || '',
-    'Gemeldet von': m.melder || '',
+    MATNR: m.artikelnummer || '',
+    WERKS: SAP_WERK,
+    LGORT: SAP_LGORT,
+    LGPBE: m.neuerLagerplatz || '',
   }));
   const ws = window.XLSX.utils.json_to_sheet(rows);
-  window.XLSX.utils.book_append_sheet(wb, ws, 'Lagerplatzkorrektur');
+  window.XLSX.utils.book_append_sheet(wb, ws, 'Tabelle1');
   const arrayBuffer = window.XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
   const blob = new Blob([arrayBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
 

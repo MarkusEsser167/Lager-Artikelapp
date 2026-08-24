@@ -106,7 +106,7 @@ function meldungCard(m, container, router) {
   const title = m.artikelnummer || '(keine Artikelnummer)';
   const sub =
     m.type === 'lagerplatz'
-      ? `${m.altLagerplatz || '–'} → ${m.neuLagerplatz || '–'}`
+      ? `Neuer Lagerplatz: ${m.neuLagerplatz || '–'}`
       : m.type === 'lagerplatzkorrektur'
         ? `${m.bisherigerLagerplatz || '–'} → ${m.neuerLagerplatz || '–'}`
         : `${m.grund || '–'}${m.menge ? ' · ' + m.menge + ' Stk.' : ''}`;

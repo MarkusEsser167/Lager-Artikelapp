@@ -46,16 +46,6 @@ export async function renderNewLagerplatz(container, router) {
   section.appendChild(artikel.wrap);
   section.appendChild(bezeichnung.wrap);
 
-  const altPlatz = scanField({
-    id: 'alt-lagerplatz',
-    label: 'Bisheriger Lagerplatz',
-    placeholder: 'Lagerplatz scannen, eingeben oder suchen',
-    items: lagerplatzListe,
-    valueKey: 'code',
-    labelKey: 'bezeichnung',
-  });
-  section.appendChild(altPlatz.wrap);
-
   const neuPlatz = scanField({
     id: 'neu-lagerplatz',
     label: 'Neuer Lagerplatz',
@@ -83,8 +73,8 @@ export async function renderNewLagerplatz(container, router) {
       artikel.input.focus();
       return;
     }
-    if (!altPlatz.input.value.trim() || !neuPlatz.input.value.trim()) {
-      alert('Bitte bisherigen und neuen Lagerplatz angeben.');
+    if (!neuPlatz.input.value.trim()) {
+      alert('Bitte den neuen Lagerplatz angeben.');
       return;
     }
     if (!melder.input.value) {
@@ -102,7 +92,6 @@ export async function renderNewLagerplatz(container, router) {
       createdAt: new Date().toISOString(),
       artikelnummer: artikel.input.value.trim(),
       artikelbezeichnung: bezeichnung.input.value.trim(),
-      altLagerplatz: altPlatz.input.value.trim(),
       neuLagerplatz: neuPlatz.input.value.trim(),
       bemerkung: bemerkung.input.value.trim(),
       melder: melder.input.value,

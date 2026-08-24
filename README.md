@@ -4,13 +4,15 @@ Progressive Web App für Lagertablets: Meldung von Lagerplatzänderungen und Ver
 
 ## Funktionen
 
-- **Lagerplatzänderung melden** – Artikelnummer, bisheriger/neuer Lagerplatz, Bemerkung. Wird beim
+- **Lagerplatzänderung melden** – Artikelnummer, neuer Lagerplatz, Bemerkung. Wird beim
   Absenden sofort als Excel-Datei an `muenster@wego-vti.de` gemailt.
 - **Verschrottung melden** – Artikelnummer, Menge, Grund, Foto, Bemerkung. Wird beim Absenden sofort als
   PDF (mit eingebettetem Foto) an `Martin.Jochheim@wego-vti.de` gemailt.
 - **Massen-Lagerplatzkorrektur** – zur Inventurvorbereitung: Artikel scannen, aktuellen Lagerplatz laut
   System (`data/artikel-lagerplatz.xlsx`) prüfen und ggf. korrigieren. Mehrere Korrekturen werden auf
-  der Seite gesammelt und gemeinsam als eine Excel-Datei an `muenster@wego-vti.de` gesendet.
+  der Seite gesammelt und gemeinsam als eine Excel-Datei an `muenster@wego-vti.de` gesendet – im festen
+  SAP-Massenupload-Format `MATNR` (Artikelnummer), `WERKS`/`LGORT` (fest „106“), `LGPBE` (neuer
+  Lagerplatz), ohne weitere Spalten.
 - Lagerplatzänderung und Verschrottung werden einzeln und sofort versendet, kein Sammel-Export nötig
 - Artikelnummer & Lagerplatz per Barcode-/QR-Scan über die Tablet-Kamera erfassbar, mit Suche/Vorschlagsliste aus hinterlegten Listen (Fallback: manuelle Eingabe)
 - „Gemeldet von“ ist überall eine Pflicht-Auswahl aus der Mitarbeiterliste (`data/mitarbeiter.xlsx`) –
@@ -55,7 +57,7 @@ Format sind je nach Meldungstyp fest hinterlegt (`js/export.js`):
 |---|---|---|
 | Lagerplatzänderung | `muenster@wego-vti.de` | Excel (1 Zeile) |
 | Verschrottung | `Martin.Jochheim@wego-vti.de` | PDF mit eingebettetem Foto (`js/pdf.js`) |
-| Massen-Lagerplatzkorrektur | `muenster@wego-vti.de` | Excel (1 Zeile je erfasster Korrektur, gesammelt) |
+| Massen-Lagerplatzkorrektur | `muenster@wego-vti.de` | Excel im SAP-Format `MATNR`/`WERKS`/`LGORT`/`LGPBE` (1 Zeile je Korrektur, gesammelt) |
 
 Solange kein Script hinterlegt ist, fällt die App automatisch auf Download + vorausgefüllten
 E-Mail-Entwurf zurück (Anhang muss dann manuell hinzugefügt werden).
