@@ -77,26 +77,50 @@ export async function renderNewVerschrottung(container, router) {
   const bemerkung = simpleField({ id: 'bemerkung', label: 'Bemerkung (optional)', textarea: true });
   section.appendChild(bemerkung.wrap);
 
-  // Foto
+  // Fotos (bis zu MAX_PHOTOS, alle werden in die PDF eingebettet)
+  const MAX_PHOTOS = 4;
   const photoWrap = document.createElement('div');
   photoWrap.className = 'field photo-field';
-  photoWrap.innerHTML = `<label class="field-label">Foto (optional)</label>`;
+  photoWrap.innerHTML = `<label class="field-label">Fotos (optional, bis zu ${MAX_PHOTOS})</label>`;
   const photoBtn = document.createElement('button');
   photoBtn.type = 'button';
   photoBtn.className = 'btn btn-ghost';
-  photoBtn.textContent = '📷 Foto aufnehmen';
-  const photoPreview = document.createElement('div');
-  photoPreview.className = 'photo-preview';
-  let photoDataUrl = null;
+  const photoGrid = document.createElement('div');
+  photoGrid.className = 'photo-grid';
+  const photos = [];
+
+  function renderPhotoGrid() {
+    photoGrid.innerHTML = '';
+    photos.forEach((dataUrl, i) => {
+      const thumb = document.createElement('div');
+      thumb.className = 'photo-thumb';
+      thumb.innerHTML = `<img src="${dataUrl}" alt="Foto ${i + 1}" />`;
+      const removeBtn = document.createElement('button');
+      removeBtn.type = 'button';
+      removeBtn.className = 'photo-remove';
+      removeBtn.textContent = '✕';
+      removeBtn.addEventListener('click', () => {
+        photos.splice(i, 1);
+        renderPhotoGrid();
+      });
+      thumb.appendChild(removeBtn);
+      photoGrid.appendChild(thumb);
+    });
+    photoBtn.textContent = `📷 Foto hinzufügen (${photos.length}/${MAX_PHOTOS})`;
+    photoBtn.disabled = photos.length >= MAX_PHOTOS;
+  }
+  renderPhotoGrid();
+
   photoBtn.addEventListener('click', async () => {
+    if (photos.length >= MAX_PHOTOS) return;
     const dataUrl = await pickPhoto();
     if (dataUrl) {
-      photoDataUrl = dataUrl;
-      photoPreview.innerHTML = `<img src="${dataUrl}" alt="Foto" />`;
+      photos.push(dataUrl);
+      renderPhotoGrid();
     }
   });
   photoWrap.appendChild(photoBtn);
-  photoWrap.appendChild(photoPreview);
+  photoWrap.appendChild(photoGrid);
   section.appendChild(photoWrap);
 
   const melder = selectField({ id: 'melder', label: 'Gemeldet von *', options: mitarbeiterListe, value: getMelderName() });
@@ -141,7 +165,7 @@ export async function renderNewVerschrottung(container, router) {
       grund: selectedGrund,
       grundSonstiges: sonstiges.input.value.trim(),
       bemerkung: bemerkung.input.value.trim(),
-      foto: photoDataUrl,
+      fotos: photos,
       melder: melder.input.value,
     };
     await MeldungStore.saveMeldung(meldung);

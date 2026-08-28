@@ -4,6 +4,9 @@ const MARGIN = 15;
 const PAGE_W = 210;
 const PAGE_H = 297;
 const CONTENT_W = PAGE_W - MARGIN * 2;
+const PHOTO_BOX_W = 85;
+const PHOTO_BOX_H = 62;
+const PHOTO_GAP = 6;
 
 function loadImageSize(dataUrl) {
   return new Promise((resolve) => {
@@ -46,25 +49,36 @@ export async function buildVerschrottungPdf(m) {
   row('Bemerkung', m.bemerkung);
   row('Gemeldet von', m.melder);
 
-  if (m.foto) {
-    const size = await loadImageSize(m.foto);
-    if (size) {
-      const maxW = CONTENT_W;
-      const maxH = PAGE_H - MARGIN - y - 10;
-      let w = maxW;
-      let h = (size.h / size.w) * maxW;
-      if (h > maxH) {
-        h = maxH;
-        w = (size.w / size.h) * maxH;
+  // Bis zu 4 Fotos, 2-spaltig eingebettet (analog zum Muster der WeGo-VTI-Unfallaufnahme-App).
+  const fotos = (m.fotos && m.fotos.length ? m.fotos : m.foto ? [m.foto] : []).slice(0, 4);
+  if (fotos.length) {
+    y += 5;
+    const sizes = await Promise.all(fotos.map(loadImageSize));
+    fotos.forEach((foto, i) => {
+      const col = i % 2;
+      if (col === 0 && y + PHOTO_BOX_H > PAGE_H - MARGIN) {
+        doc.addPage();
+        y = MARGIN;
       }
-      y += 5;
-      try {
-        doc.addImage(m.foto, 'JPEG', MARGIN, y, w, h, undefined, 'FAST');
-        y += h + 5;
-      } catch (e) {
-        // ungültiges Bild ignorieren, Rest des Berichts bleibt gültig
+      const x = MARGIN + col * (PHOTO_BOX_W + PHOTO_GAP);
+      const size = sizes[i];
+      if (size) {
+        let w = PHOTO_BOX_W;
+        let h = (size.h / size.w) * PHOTO_BOX_W;
+        if (h > PHOTO_BOX_H) {
+          h = PHOTO_BOX_H;
+          w = (size.w / size.h) * PHOTO_BOX_H;
+        }
+        try {
+          doc.addImage(foto, 'JPEG', x + (PHOTO_BOX_W - w) / 2, y + (PHOTO_BOX_H - h) / 2, w, h, undefined, 'FAST');
+        } catch (e) {
+          // ungültiges Bild ignorieren, Rest des Berichts bleibt gültig
+        }
       }
-    }
+      if (col === 1 || i === fotos.length - 1) {
+        y += PHOTO_BOX_H + PHOTO_GAP;
+      }
+    });
   }
 
   const safeArtikel = (m.artikelnummer || 'artikel').replace(/[^a-zA-Z0-9_-]+/g, '_');
