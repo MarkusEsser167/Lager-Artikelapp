@@ -70,8 +70,7 @@ h3 { margin: 0; }
 
 .home-actions { display: flex; flex-direction: column; gap: 10px; margin-bottom: 18px; }
 @media (min-width: 560px) {
-  .home-actions { flex-direction: row; }
-  .home-actions .btn { flex: 1; }
+  .home-actions { display: grid; grid-template-columns: repeat(2, 1fr); }
 }
 
 .melder-box {

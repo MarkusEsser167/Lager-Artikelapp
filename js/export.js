@@ -5,6 +5,7 @@ import { formatDate } from './format.js';
 const LAGERPLATZ_RECIPIENT = 'muenster@wego-vti.de';
 const VERSCHROTTUNG_RECIPIENT = 'Martin.Jochheim@wego-vti.de';
 const LAGERPLATZKORREKTUR_RECIPIENT = 'muenster@wego-vti.de';
+const FEHLBESTAND_RECIPIENT = 'Muenster@wego-vti.de';
 
 // Google-Apps-Script-Webhook (siehe apps-script/Code.gs), der den Anhang automatisch per
 // GmailApp verschickt – analog zur bestehenden WeGo-VTI-Unfallaufnahme-App. Leer lassen,
@@ -42,6 +43,16 @@ async function sendViaScript({ to, subject, message, filename, mimeType, arrayBu
       mime_type: mimeType,
       file_base64: arrayBufferToBase64(arrayBuffer),
     }),
+  });
+}
+
+// Variante ohne Anhang (z.B. für die Fehlbestandsmeldung) – schickt nur Betreff/Text.
+async function sendPlainMailViaScript({ to, subject, message }) {
+  await fetch(MAIL_SCRIPT_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify({ to, subject, message }),
   });
 }
 
@@ -147,4 +158,22 @@ export async function sendLagerplatzkorrekturBatch(meldungen) {
   }
   fallbackDownloadAndMail({ blob, filename, to: LAGERPLATZKORREKTUR_RECIPIENT, subject, message });
   return { method: 'download' };
+}
+
+// Einfache Text-Mail ohne Anhang – kein Excel/PDF nötig, daher auch kein Download-Fallback
+// (nur mailto), da es keine Datei zum manuellen Anhängen gibt.
+export async function sendFehlbestandMeldung(m) {
+  const subject = `Fehlbestandsmeldung – ${m.artikelnummer || 'ohne Artikelnummer'}`;
+  const message = `Fehlbestand gemeldet von ${m.melder || '–'}.\nArtikel: ${m.artikelnummer || '–'}${m.bemerkung ? `\nBemerkung: ${m.bemerkung}` : ''}`;
+
+  if (MAIL_SCRIPT_URL) {
+    try {
+      await sendPlainMailViaScript({ to: FEHLBESTAND_RECIPIENT, subject, message });
+      return { method: 'auto' };
+    } catch (err) {
+      console.warn('Automatischer Mailversand fehlgeschlagen, Fallback auf mailto:', err.message);
+    }
+  }
+  openMailto({ to: FEHLBESTAND_RECIPIENT, subject, body: message });
+  return { method: 'mailto' };
 }
