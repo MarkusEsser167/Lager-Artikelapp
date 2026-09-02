@@ -28,6 +28,14 @@ const ARTIKEL_LAGERPLATZ_ALIASES = {
   bezeichnung: ARTIKEL_ALIASES.bezeichnung,
   lagerplatz: LAGERPLATZ_ALIASES.code,
 };
+// Bewusst kuratierte Teilmenge NUR für den Teilstring-Fallback (siehe parseSheet): erkennt
+// Kopfzeilen wie "FIS/wms®  Lagerplatz", die "Lagerplatz" nicht exakt, aber als Wortteil
+// enthalten. Absichtlich OHNE die generischen, kurzen Aliase wie "artikel"/"material"/"code" -
+// die kollidieren sonst mit Spalten wie "Artikelkurztext 2" oder "Materialart".
+const LOOSE_ALIASES = {
+  code: ['lagerplatz'],
+  lagerplatz: ['lagerplatz'],
+};
 // Mitarbeiterliste für die "Gemeldet von"-Auswahl (kein Freitext mehr möglich).
 const MITARBEITER_ALIASES = {
   name: ['name', 'mitarbeiter', 'melder', 'benutzer'],
@@ -40,7 +48,7 @@ async function fetchWorkbook(url) {
   return window.XLSX.read(buf, { type: 'array' });
 }
 
-function parseSheet(wb, aliasMap) {
+function parseSheet(wb, aliasMap, looseAliasMap = {}) {
   const sheet = wb.Sheets[wb.SheetNames[0]];
   const rows = window.XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
   if (!rows.length) return [];
@@ -51,9 +59,32 @@ function parseSheet(wb, aliasMap) {
   // Für jeden Schlüssel ALLE passenden Spalten sammeln (nicht nur die erste) – so werden
   // z.B. mehrzeilige SAP-Kurztexte (Materialkurztext, Artikelkurztext 2, …) automatisch
   // zu einer einzigen Bezeichnung zusammengefügt.
+  //
+  // Jede Spalte wird höchstens einem Schlüssel zugeordnet, in zwei Durchgängen: zuerst exakte
+  // Treffer gegen aliasMap, erst danach Teilstring-Treffer gegen die viel engere looseAliasMap
+  // (z.B. nur "lagerplatz", für Kopfzeilen wie "FIS/wms®  Lagerplatz"). Generische Aliase wie
+  // "artikel"/"material"/"code" werden bewusst NIE als Teilstring geprüft – sonst würde z.B.
+  // "artikel" fälschlich auch in "Artikelkurztext 2" matchen, obwohl die Spalte exakt zur
+  // Bezeichnung gehört, und die Artikelnummer würde die komplette Beschreibung mit enthalten.
   const colIdxByKey = {};
-  keys.forEach((key) => {
-    colIdxByKey[key] = header.reduce((acc, h, i) => (aliasMap[key].includes(h) ? [...acc, i] : acc), []);
+  keys.forEach((key) => { colIdxByKey[key] = []; });
+  const claimed = new Array(header.length).fill(false);
+
+  header.forEach((h, i) => {
+    if (!h) return;
+    const key = keys.find((k) => aliasMap[k].includes(h));
+    if (key) {
+      colIdxByKey[key].push(i);
+      claimed[i] = true;
+    }
+  });
+  header.forEach((h, i) => {
+    if (claimed[i] || !h) return;
+    const key = keys.find((k) => (looseAliasMap[k] || []).some((alias) => h.includes(alias)));
+    if (key) {
+      colIdxByKey[key].push(i);
+      claimed[i] = true;
+    }
   });
   // Nur die erste Spalte (z.B. Artikelnummer/Lagerplatz) muss erkannt werden – weitere
   // Spalten wie Bezeichnung sind optional und bleiben sonst einfach leer.
@@ -96,7 +127,7 @@ export function loadArtikelListe() {
 export function loadLagerplatzListe() {
   if (!lagerplatzPromise) {
     lagerplatzPromise = fetchWorkbook(LAGERPLATZ_URL)
-      .then((wb) => parseSheet(wb, LAGERPLATZ_ALIASES))
+      .then((wb) => parseSheet(wb, LAGERPLATZ_ALIASES, LOOSE_ALIASES))
       .catch((err) => {
         console.warn('Lagerplatzliste konnte nicht geladen werden:', err.message);
         return [];
@@ -108,7 +139,7 @@ export function loadLagerplatzListe() {
 export function loadArtikelLagerplatzListe() {
   if (!artikelLagerplatzPromise) {
     artikelLagerplatzPromise = fetchWorkbook(ARTIKEL_LAGERPLATZ_URL)
-      .then((wb) => parseSheet(wb, ARTIKEL_LAGERPLATZ_ALIASES))
+      .then((wb) => parseSheet(wb, ARTIKEL_LAGERPLATZ_ALIASES, LOOSE_ALIASES))
       .catch((err) => {
         console.warn('Artikel-Lagerplatz-Referenzliste konnte nicht geladen werden:', err.message);
         return [];
