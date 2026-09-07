@@ -35,8 +35,11 @@ Die Vorschlagslisten für die Formulare liegen als Excel-Dateien im Repo:
 - `data/lagerplatzliste.xlsx` – Spalte `Lagerplatz` (eine `Bezeichnung`-Spalte ist optional, wird aber
   aktuell nicht mitgeführt). Aktuell 234 Plätze.
 - `data/artikel-lagerplatz.xlsx` – nur für die Massen-Lagerplatzkorrektur: welcher Artikel steht laut
-  System aktuell auf welchem Lagerplatz (Spalten wie `artikelliste.xlsx` + `Lagerplatz`). Aktuell ca.
-  1.600 Artikel (Filiale/Lager „106“).
+  System aktuell auf welchem Lagerplatz (Spalten wie `artikelliste.xlsx` + `Lagerplatz` + optional
+  `KZ Hlp`). Ein Artikel darf mehrfach vorkommen (mehrere Lagerplätze) – die Zeile mit `KZ Hlp` = „X“
+  gilt als Hauptlagerplatz und wird in der App zuerst und mit „(Haupt)“ markiert angezeigt, weitere
+  Lagerplätze folgen kommagetrennt (`js/refData.js`: `groupArtikelLagerplatz`). Aktuell ca. 2.460
+  Artikel (Filiale/Lager „106“).
 - `data/mitarbeiter.xlsx` – Spalte `Name`, füllt die „Gemeldet von“-Auswahl in allen Formularen (kein
   Freitext möglich). Bei Personalwechsel hier einfach Namen ergänzen/entfernen.
 

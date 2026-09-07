@@ -22,11 +22,14 @@ const LAGERPLATZ_ALIASES = {
   bezeichnung: ['bezeichnung', 'bereich', 'zone', 'beschreibung'],
 };
 // Referenzliste für die Massen-Lagerplatzkorrektur: welcher Artikel steht laut System
-// aktuell auf welchem Lagerplatz (z.B. SAP-Export mit zusätzlicher Lagerplatz-Spalte).
+// aktuell auf welchem Lagerplatz (z.B. SAP-Export mit zusätzlicher Lagerplatz-Spalte). Ein
+// Artikel kann mehrfach vorkommen (mehrere Lagerplätze); "KZ Hlp" markiert den Hauptlagerplatz
+// – siehe groupArtikelLagerplatz(), das die Zeilen pro Artikel zu einem Eintrag zusammenfasst.
 const ARTIKEL_LAGERPLATZ_ALIASES = {
   nummer: ARTIKEL_ALIASES.nummer,
   bezeichnung: ARTIKEL_ALIASES.bezeichnung,
   lagerplatz: LAGERPLATZ_ALIASES.code,
+  hauptlagerplatz: ['kz hlp', 'hlp', 'hauptlagerplatz'],
 };
 // Bewusst kuratierte Teilmenge NUR für den Teilstring-Fallback (siehe parseSheet): erkennt
 // Kopfzeilen wie "FIS/wms®  Lagerplatz", die "Lagerplatz" nicht exakt, aber als Wortteil
@@ -104,6 +107,31 @@ function parseSheet(wb, aliasMap, looseAliasMap = {}) {
     .filter((item) => item[primaryKey]);
 }
 
+// Fasst mehrere Zeilen je Artikel (ein Eintrag pro Lagerplatz) zu einem Eintrag zusammen,
+// damit der Rest der App (Suche, Anzeige) weiterhin einfach mit einem "lagerplatz"-String pro
+// Artikel arbeiten kann. Der Hauptlagerplatz (KZ Hlp = "X") wird zuerst genannt und markiert;
+// bei nur einem Lagerplatz bleibt die Anzeige unverändert schlicht (kein "(Haupt)"-Zusatz).
+function groupArtikelLagerplatz(rows) {
+  const order = [];
+  const byNummer = new Map();
+  for (const row of rows) {
+    if (!byNummer.has(row.nummer)) {
+      byNummer.set(row.nummer, { bezeichnung: row.bezeichnung, locations: [] });
+      order.push(row.nummer);
+    }
+    const entry = byNummer.get(row.nummer);
+    if (!entry.bezeichnung) entry.bezeichnung = row.bezeichnung;
+    if (row.lagerplatz) entry.locations.push({ code: row.lagerplatz, haupt: row.hauptlagerplatz === 'X' });
+  }
+  return order.map((nummer) => {
+    const { bezeichnung, locations } = byNummer.get(nummer);
+    const sorted = [...locations].sort((a, b) => Number(b.haupt) - Number(a.haupt));
+    const lagerplatz =
+      sorted.length > 1 ? sorted.map((l) => (l.haupt ? `${l.code} (Haupt)` : l.code)).join(', ') : sorted[0]?.code || '';
+    return { nummer, bezeichnung, lagerplatz };
+  });
+}
+
 // Die Artikelliste kann mehrere zehntausend Zeilen haben und braucht spürbar Zeit zum
 // Parsen – der Promise selbst wird gecacht (nicht erst das Ergebnis), damit gleichzeitige
 // Aufrufe (z.B. Startseite + direkt geöffnetes Formular) sich einen Ladevorgang teilen.
@@ -139,7 +167,7 @@ export function loadLagerplatzListe() {
 export function loadArtikelLagerplatzListe() {
   if (!artikelLagerplatzPromise) {
     artikelLagerplatzPromise = fetchWorkbook(ARTIKEL_LAGERPLATZ_URL)
-      .then((wb) => parseSheet(wb, ARTIKEL_LAGERPLATZ_ALIASES, LOOSE_ALIASES))
+      .then((wb) => groupArtikelLagerplatz(parseSheet(wb, ARTIKEL_LAGERPLATZ_ALIASES, LOOSE_ALIASES)))
       .catch((err) => {
         console.warn('Artikel-Lagerplatz-Referenzliste konnte nicht geladen werden:', err.message);
         return [];
