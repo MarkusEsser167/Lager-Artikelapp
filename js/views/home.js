@@ -1,6 +1,7 @@
 import { MeldungStore, getMelderName, setMelderName } from '../db.js';
 import { sendLagerplatzMeldung, sendVerschrottungMeldung, sendLagerplatzkorrekturBatch, sendFehlbestandMeldung } from '../export.js';
 import { loadArtikelListe, loadLagerplatzListe, loadArtikelLagerplatzListe, loadMitarbeiterListe } from '../refData.js';
+import { APP_VERSION } from '../version.js';
 
 const TYPE_LABEL = {
   lagerplatz: { text: 'Lagerplatzänderung', cls: 'badge-lager', icon: '📦' },
@@ -14,7 +15,14 @@ export async function renderHome(container, router) {
 
   const header = document.createElement('div');
   header.className = 'view-header';
-  header.innerHTML = `<h1>Lagermeldungen</h1><p class="view-subtitle">Lagerplatzänderungen &amp; Verschrottungen erfassen</p>`;
+  header.innerHTML = `
+    <div class="app-brand">
+      <img src="./icons/logo-wego-vti.png" alt="WEGO VTI" class="app-logo" />
+      <span class="app-version">v${APP_VERSION}</span>
+    </div>
+    <h1>Lagermeldungen</h1>
+    <p class="view-subtitle">Lagerplatzänderungen &amp; Verschrottungen erfassen</p>
+  `;
   container.appendChild(header);
 
   container.appendChild(melderBox());

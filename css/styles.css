@@ -36,6 +36,10 @@ h3 { margin: 0; }
 .view-header { margin-bottom: 16px; }
 .view-subtitle { color: var(--text-muted); margin: 2px 0 0; }
 
+.app-brand { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.app-logo { height: 32px; width: auto; display: block; }
+.app-version { font-size: 0.75rem; color: var(--text-muted); white-space: nowrap; }
+
 .btn-back {
   background: none;
   border: none;

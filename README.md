@@ -2,6 +2,11 @@
 
 Progressive Web App für Lagertablets: Meldung von Lagerplatzänderungen und Verschrottungen.
 
+Der Startseiten-Header zeigt das WEGO-VTI-Logo (`icons/logo-wego-vti.png`) und die aktuelle
+App-Version (`js/version.js`, `APP_VERSION`). Bei jeder inhaltlichen Änderung `APP_VERSION` sowie
+`CACHE_NAME` in `sw.js` hochzählen, damit auf einen Blick erkennbar ist, welcher Stand auf einem
+Tablet installiert ist.
+
 ## Funktionen
 
 - **Lagerplatzänderung melden** – Artikelnummer, Art (**Hauptlagerplatz** oder **Referenzlagerplatz**,

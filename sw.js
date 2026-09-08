@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lager-meldung-v21';
+const CACHE_NAME = 'lager-meldung-v22';
 const PRECACHE = [
   './',
   './index.html',
@@ -14,6 +14,7 @@ const PRECACHE = [
   './js/format.js',
   './js/formFields.js',
   './js/refData.js',
+  './js/version.js',
   './js/views/home.js',
   './js/views/newLagerplatz.js',
   './js/views/newVerschrottung.js',
@@ -24,6 +25,7 @@ const PRECACHE = [
   './icons/icon-192.png',
   './icons/icon-512.png',
   './icons/icon-512-maskable.png',
+  './icons/logo-wego-vti.png',
 ];
 
 self.addEventListener('install', (event) => {
