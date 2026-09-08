@@ -29,8 +29,15 @@ export function scanField({ id, label, placeholder = '', items = null, valueKey,
       // Erst ab 2 Zeichen suchen – bei sehr großen Listen (z.B. 150.000+ Artikeln) wäre
       // ein Treffer auf 1 Zeichen weder aussagekräftig noch beim Tippen flüssig.
       if (q.length < 2) return;
+      // Volltextsuche über mehrere Wörter: jedes eingegebene Wort muss irgendwo in
+      // Nummer + Bezeichnung vorkommen (Reihenfolge egal), z.B. "schraube m8" findet
+      // "Sechskantschraube M8x40" ebenso wie "M8 Schraube verzinkt".
+      const terms = q.split(/\s+/).filter(Boolean);
       const matches = items
-        .filter((it) => it[valueKey].toLowerCase().includes(q) || (it[labelKey] || '').toLowerCase().includes(q))
+        .filter((it) => {
+          const haystack = `${it[valueKey]} ${it[labelKey] || ''}`.toLowerCase();
+          return terms.every((t) => haystack.includes(t));
+        })
         .slice(0, 8);
       matches.forEach((m) => {
         const row = document.createElement('button');
