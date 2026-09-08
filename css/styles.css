@@ -207,6 +207,16 @@ h3 { margin: 0; }
   color: var(--text-muted);
 }
 
+.notice-box {
+  background: #fdf6e8;
+  border: 1px solid var(--warn);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  margin-bottom: 14px;
+  font-size: 0.88rem;
+  color: #5c4406;
+}
+
 .chip-row { display: flex; flex-wrap: wrap; gap: 8px; }
 .chip {
   border: 1px solid var(--border);

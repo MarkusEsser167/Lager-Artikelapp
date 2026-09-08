@@ -74,6 +74,29 @@ export async function renderNewLagerplatz(container, router) {
     if (artikel.input.value.trim() !== aktuellerLagerplatzFuer) aktuellerLagerplatzBox.style.display = 'none';
   });
 
+  // Art der Änderung: Hauptlagerplatz (der eine "offizielle" Platz laut System) oder
+  // Referenzlagerplatz (zusätzlicher, weiterer Lagerplatz für denselben Artikel). Die
+  // Massen-Lagerplatzkorrektur kann nur den Hauptlagerplatz ändern (SAP-Massenupload) -
+  // Referenzlagerplätze laufen deshalb ausschließlich über dieses Einzelformular.
+  const artWrap = document.createElement('div');
+  artWrap.className = 'field';
+  artWrap.innerHTML = `<label class="field-label">Art des neuen Lagerplatzes</label><div class="chip-row"></div>`;
+  const artChipRow = artWrap.querySelector('.chip-row');
+  let selectedArt = '';
+  ['Hauptlagerplatz', 'Referenzlagerplatz'].forEach((art) => {
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = 'chip';
+    chip.textContent = art;
+    chip.addEventListener('click', () => {
+      selectedArt = art;
+      artChipRow.querySelectorAll('.chip').forEach((c) => c.classList.remove('chip-active'));
+      chip.classList.add('chip-active');
+    });
+    artChipRow.appendChild(chip);
+  });
+  section.appendChild(artWrap);
+
   const neuPlatz = scanField({
     id: 'neu-lagerplatz',
     label: 'Neuer Lagerplatz',
@@ -101,6 +124,10 @@ export async function renderNewLagerplatz(container, router) {
       artikel.input.focus();
       return;
     }
+    if (!selectedArt) {
+      alert('Bitte angeben, ob es sich um den neuen Hauptlagerplatz oder einen Referenzlagerplatz handelt.');
+      return;
+    }
     if (!neuPlatz.input.value.trim()) {
       alert('Bitte den neuen Lagerplatz angeben.');
       return;
@@ -120,6 +147,7 @@ export async function renderNewLagerplatz(container, router) {
       createdAt: new Date().toISOString(),
       artikelnummer: artikel.input.value.trim(),
       artikelbezeichnung: bezeichnung.input.value.trim(),
+      lagerplatzArt: selectedArt,
       neuLagerplatz: neuPlatz.input.value.trim(),
       bemerkung: bemerkung.input.value.trim(),
       melder: melder.input.value,

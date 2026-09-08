@@ -74,6 +74,7 @@ export async function sendLagerplatzMeldung(m) {
     Datum: formatDate(m.createdAt),
     Artikelnummer: m.artikelnummer || '',
     Artikelbezeichnung: m.artikelbezeichnung || '',
+    Art: m.lagerplatzArt || '',
     'Neuer Lagerplatz': m.neuLagerplatz || '',
     Bemerkung: m.bemerkung || '',
     'Gemeldet von': m.melder || '',
@@ -85,8 +86,8 @@ export async function sendLagerplatzMeldung(m) {
 
   const safeArtikel = (m.artikelnummer || 'artikel').replace(/[^a-zA-Z0-9_-]+/g, '_');
   const filename = `Lagerplatzaenderung_${safeArtikel}_${m.id}.xlsx`;
-  const subject = `Lagerplatzänderung – ${m.artikelnummer || 'ohne Artikelnummer'}`;
-  const message = `Lagerplatzänderung gemeldet von ${m.melder || '–'}.\nArtikel: ${m.artikelnummer || '–'}\nNeuer Lagerplatz: ${m.neuLagerplatz || '–'}`;
+  const subject = `Lagerplatzänderung (${m.lagerplatzArt || 'ohne Angabe'}) – ${m.artikelnummer || 'ohne Artikelnummer'}`;
+  const message = `Lagerplatzänderung gemeldet von ${m.melder || '–'}.\nArtikel: ${m.artikelnummer || '–'}\nArt: ${m.lagerplatzArt || '–'}\nNeuer Lagerplatz: ${m.neuLagerplatz || '–'}`;
 
   if (MAIL_SCRIPT_URL) {
     try {

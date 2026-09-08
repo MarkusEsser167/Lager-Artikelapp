@@ -113,9 +113,9 @@ function meldungCard(m, container, router) {
   const title = m.artikelnummer || '(keine Artikelnummer)';
   const sub =
     m.type === 'lagerplatz'
-      ? `Neuer Lagerplatz: ${m.neuLagerplatz || '–'}`
+      ? `Neuer ${m.lagerplatzArt || 'Lagerplatz'}: ${m.neuLagerplatz || '–'}`
       : m.type === 'lagerplatzkorrektur'
-        ? `${m.bisherigerLagerplatz || '–'} → ${m.neuerLagerplatz || '–'}`
+        ? `Hauptlagerplatz: ${m.bisherigerLagerplatz || '–'} → ${m.neuerLagerplatz || '–'}`
         : m.type === 'fehlbestand'
           ? (m.bemerkung || 'Fehlbestand')
           : `${m.grund || '–'}${m.menge ? ' · ' + m.menge + ' Stk.' : ''}`;

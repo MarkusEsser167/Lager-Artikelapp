@@ -10,7 +10,7 @@ export async function renderNewMassenkorrektur(container, router) {
   header.className = 'view-header';
   header.innerHTML = `
     <h1>Massen-Lagerplatzkorrektur</h1>
-    <p class="view-subtitle">Zur Inventurvorbereitung: Artikel scannen, aktuellen Lagerplatz prüfen und bei Bedarf korrigieren.</p>
+    <p class="view-subtitle">Zur Inventurvorbereitung: Artikel scannen, aktuellen Hauptlagerplatz prüfen und bei Bedarf korrigieren.</p>
   `;
   const backBtn = document.createElement('button');
   backBtn.className = 'btn-back';
@@ -18,6 +18,14 @@ export async function renderNewMassenkorrektur(container, router) {
   backBtn.addEventListener('click', () => router.navigate(''));
   container.appendChild(backBtn);
   container.appendChild(header);
+
+  const notice = document.createElement('div');
+  notice.className = 'notice-box';
+  notice.innerHTML =
+    '⚠️ Hier lässt sich nur der <strong>Hauptlagerplatz</strong> ändern (SAP-Massenupload). ' +
+    'Für einen zusätzlichen <strong>Referenzlagerplatz</strong> bitte einzeln über ' +
+    '„Lagerplatzänderung melden" auf der Startseite melden.';
+  container.appendChild(notice);
 
   const loading = document.createElement('div');
   loading.className = 'empty-state';
@@ -61,7 +69,7 @@ export async function renderNewMassenkorrektur(container, router) {
       infoBox.style.display = 'block';
       infoBox.innerHTML = `
         <strong>${escapeHtml(m.bezeichnung || '(keine Bezeichnung)')}</strong><br>
-        Aktueller Lagerplatz (laut System): <strong>${escapeHtml(m.lagerplatz || '–')}</strong>
+        Aktueller Hauptlagerplatz (laut System): <strong>${escapeHtml(m.lagerplatz || '–')}</strong>
       `;
     },
   });
@@ -79,7 +87,7 @@ export async function renderNewMassenkorrektur(container, router) {
 
   const neuPlatz = scanField({
     id: 'neuer-lagerplatz',
-    label: 'Neuer Lagerplatz (Ist-Zustand)',
+    label: 'Neuer Hauptlagerplatz (Ist-Zustand)',
     placeholder: 'Lagerplatz scannen, eingeben oder suchen',
     items: lagerplatzListe,
     valueKey: 'code',
@@ -188,7 +196,7 @@ export async function renderNewMassenkorrektur(container, router) {
     row.innerHTML = `
       <div class="protocol-card-title">${escapeHtml(m.artikelnummer || '(keine Artikelnummer)')}</div>
       <div class="protocol-card-sub">${escapeHtml(m.artikelbezeichnung || '–')}</div>
-      <div class="protocol-card-sub">${escapeHtml(m.bisherigerLagerplatz || '–')} → ${escapeHtml(m.neuerLagerplatz || '–')}</div>
+      <div class="protocol-card-sub">Hauptlagerplatz: ${escapeHtml(m.bisherigerLagerplatz || '–')} → ${escapeHtml(m.neuerLagerplatz || '–')}</div>
     `;
     const actions = document.createElement('div');
     actions.className = 'card-actions';
