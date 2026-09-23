@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lager-meldung-v22';
+const CACHE_NAME = 'lager-meldung-v23';
 const PRECACHE = [
   './',
   './index.html',

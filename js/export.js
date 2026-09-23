@@ -5,7 +5,7 @@ import { formatDate } from './format.js';
 const LAGERPLATZ_RECIPIENT = 'muenster@wego-vti.de';
 const VERSCHROTTUNG_RECIPIENT = 'Martin.Jochheim@wego-vti.de';
 const LAGERPLATZKORREKTUR_RECIPIENT = 'muenster@wego-vti.de';
-const FEHLBESTAND_RECIPIENT = 'Muenster@wego-vti.de';
+const FEHLBESTAND_RECIPIENT = 'muenster@wego-vti.de';
 
 // Google-Apps-Script-Webhook (siehe apps-script/Code.gs), der den Anhang automatisch per
 // GmailApp verschickt – analog zur bestehenden WeGo-VTI-Unfallaufnahme-App. Leer lassen,
