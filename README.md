@@ -27,6 +27,9 @@ Tablet installiert ist.
   der Artikel auf dem Platz – **keine Mengen**, jeder Artikel nur einmal – mit Abgleich gegen
   `artikel-lagerplatz.xlsx` (passt / abweichend / ohne Referenz / unbekannt). Versand als Excel an die
   Standort-Mailadresse.
+  Zusätzlich wird – nur für Artikel, die laut System nicht auf diesem Lagerplatz stehen – eine zweite Excel-Datei im
+  Format der Massen-Lagerplatzkorrektur (`MATNR`, `WERKS`, `LGORT`, `LGPBE`) mit dem erfassten Lagerplatz als neuem
+  Hauptlagerplatz angehängt.
 - **Fehlbestand melden** – nur Artikelnummer (+ optionale Bemerkung), ohne Lagerplatz oder Menge. Wird
   beim Absenden sofort als einfache Text-Mail (kein Anhang) an `muenster@wego-vti.de` gemailt.
 - Lagerplatzänderung, Verschrottung und Fehlbestand werden einzeln und sofort versendet, kein
