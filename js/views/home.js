@@ -1,5 +1,5 @@
 import { MeldungStore, getMelderName, setMelderName } from '../db.js';
-import { sendLagerplatzMeldung, sendVerschrottungMeldung, sendLagerplatzkorrekturBatch, sendFehlbestandMeldung } from '../export.js';
+import { sendLagerplatzMeldung, sendVerschrottungMeldung, sendLagerplatzkorrekturBatch, sendFehlbestandMeldung, sendLagerplatzerfassung } from '../export.js';
 import { loadArtikelListe, loadLagerplatzListe, loadArtikelLagerplatzListe, loadMitarbeiterListe } from '../refData.js';
 import { APP_VERSION } from '../version.js';
 
@@ -8,6 +8,7 @@ const TYPE_LABEL = {
   verschrottung: { text: 'Verschrottung', cls: 'badge-verschrottung', icon: '🗑️' },
   lagerplatzkorrektur: { text: 'Lagerplatzkorrektur', cls: 'badge-lager', icon: '🔍' },
   fehlbestand: { text: 'Fehlbestand', cls: 'badge-verschrottung', icon: '❓' },
+  lagerplatzerfassung: { text: 'Lagerplatz-Erfassung', cls: 'badge-lager', icon: '📷' },
 };
 
 export async function renderHome(container, router) {
@@ -50,10 +51,16 @@ export async function renderHome(container, router) {
   fehlbestandBtn.innerHTML = '❓<br>Fehlbestand melden';
   fehlbestandBtn.addEventListener('click', () => router.navigate('neu-fehlbestand'));
 
+  const erfassungBtn = document.createElement('button');
+  erfassungBtn.className = 'btn btn-secondary btn-tile';
+  erfassungBtn.innerHTML = '📷<br>Lagerplatz-Erfassung (Kamera)';
+  erfassungBtn.addEventListener('click', () => router.navigate('lagerplatz-erfassung'));
+
   actions.appendChild(lagerBtn);
   actions.appendChild(verschrottungBtn);
   actions.appendChild(korrekturBtn);
   actions.appendChild(fehlbestandBtn);
+  actions.appendChild(erfassungBtn);
   container.appendChild(actions);
 
   const meldungen = await MeldungStore.listMeldungen();
@@ -118,12 +125,14 @@ function meldungCard(m, container, router) {
   const status = STATUS_LABEL[m.status] || STATUS_LABEL.offen;
   const card = document.createElement('div');
   card.className = 'protocol-card';
-  const title = m.artikelnummer || '(keine Artikelnummer)';
+  const title = m.type === 'lagerplatzerfassung' ? `Lagerplatz ${m.lagerplatz || '–'}` : m.artikelnummer || '(keine Artikelnummer)';
   const sub =
     m.type === 'lagerplatz'
       ? `Neuer ${m.lagerplatzArt || 'Lagerplatz'}: ${m.neuLagerplatz || '–'}`
       : m.type === 'lagerplatzkorrektur'
         ? `Hauptlagerplatz: ${m.bisherigerLagerplatz || '–'} → ${m.neuerLagerplatz || '–'}`
+        : m.type === 'lagerplatzerfassung'
+          ? `${(m.items || []).length} Artikel erfasst`
         : m.type === 'fehlbestand'
           ? (m.bemerkung || 'Fehlbestand')
           : `${m.grund || '–'}${m.menge ? ' · ' + m.menge + ' Stk.' : ''}`;
@@ -151,6 +160,7 @@ function meldungCard(m, container, router) {
           m.type === 'lagerplatz' ? await sendLagerplatzMeldung(m)
           : m.type === 'lagerplatzkorrektur' ? await sendLagerplatzkorrekturBatch([m])
           : m.type === 'fehlbestand' ? await sendFehlbestandMeldung(m)
+          : m.type === 'lagerplatzerfassung' ? await sendLagerplatzerfassung(m)
           : await sendVerschrottungMeldung(m);
         await MeldungStore.updateStatus(m.id, result.method === 'auto' ? 'gesendet' : 'manuell');
       } catch (err) {

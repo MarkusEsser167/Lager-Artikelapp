@@ -3,6 +3,7 @@ import { renderNewLagerplatz } from './views/newLagerplatz.js';
 import { renderNewVerschrottung } from './views/newVerschrottung.js';
 import { renderNewMassenkorrektur } from './views/newMassenkorrektur.js';
 import { renderNewFehlbestand } from './views/newFehlbestand.js';
+import { renderNewLagerplatzErfassung } from './views/newLagerplatzErfassung.js';
 
 const appEl = document.getElementById('app');
 
@@ -28,6 +29,8 @@ async function route() {
       await renderNewMassenkorrektur(appEl, router);
     } else if (head === 'neu-fehlbestand') {
       await renderNewFehlbestand(appEl, router);
+    } else if (head === 'lagerplatz-erfassung') {
+      await renderNewLagerplatzErfassung(appEl, router);
     } else {
       await renderHome(appEl, router);
     }
