@@ -33,6 +33,11 @@ Tablet installiert ist.
   Ist der erfasste Lagerplatz für einen Artikel bereits als **Referenzlagerplatz** eingetragen, warnt die App
   (rot im Kamerabild + Vibration, Hinweis in Liste und Mail); solche Artikel kommen nicht in die SAP-Datei,
   da die Massenänderung nur Hauptlagerplätze setzen kann.
+  **Sammelversand (ab v1.4.0):** Mehrere Lagerplätze werden nacheinander erfasst („Lagerplatz abschließen –
+  nächsten erfassen") und erst mit „Alles senden" in **einer** Mail verschickt (ein Bericht mit Spalte
+  Lagerplatz, eine gemeinsame SAP-Datei). Die laufende Erfassung wird als Entwurf in der IndexedDB
+  gespeichert und beim nächsten Öffnen fortgesetzt. Artikel, die in einer Runde auf mehreren Plätzen
+  erfasst wurden, kommen nicht in die SAP-Datei, sondern werden in der Mail zum Klären aufgeführt.
 - **Fehlbestand melden** – nur Artikelnummer (+ optionale Bemerkung), ohne Lagerplatz oder Menge. Wird
   beim Absenden sofort als einfache Text-Mail (kein Anhang) an `muenster@wego-vti.de` gemailt.
 - Lagerplatzänderung, Verschrottung und Fehlbestand werden einzeln und sofort versendet, kein
