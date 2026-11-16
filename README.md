@@ -27,7 +27,8 @@ Tablet installiert ist.
   der Artikel auf dem Platz – **keine Mengen**, jeder Artikel nur einmal – mit Abgleich gegen
   `artikel-lagerplatz.xlsx` (passt / abweichend / ohne Referenz / unbekannt). Versand als Excel an die
   Standort-Mailadresse.
-  Zusätzlich wird – nur für Artikel, die laut System nicht auf diesem Lagerplatz stehen – eine zweite Excel-Datei im
+  Zusätzlich wird – für Artikel, die laut System nicht auf diesem Lagerplatz stehen oder noch gar keinen Lagerplatz
+  haben (ab v1.4.4) – eine zweite Excel-Datei im
   Format der Massen-Lagerplatzkorrektur (`MATNR`, `WERKS`, `LGORT`, `LGPBE`) mit dem erfassten Lagerplatz als neuem
   Hauptlagerplatz angehängt.
   Ist der erfasste Lagerplatz für einen Artikel bereits als **Referenzlagerplatz** eingetragen, warnt die App
