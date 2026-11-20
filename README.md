@@ -63,7 +63,7 @@ Die Vorschlagslisten für die Formulare liegen als Excel-Dateien im Repo:
 
 - `data/artikelliste.xlsx` – SAP-Exportformat, Spalten `Material` (Artikelnummer) + beliebig viele
   Text-Spalten (`Materialkurztext`, `Artikelkurztext 2`, `Materialkurztext 3`, …), die automatisch zu
-  einer Bezeichnung zusammengefügt werden. Optionale Spalte `EAN` (als Text, nicht als Zahl formatieren): wird in der Artikelsuche (ab 6 Ziffern) und beim Scannen berücksichtigt, ein gescannter EAN wird direkt dem Artikel zugeordnet. Aktuell ca. 98.700 Artikel mit EAN. Mehrere EANs je Artikel (z.B. je Verpackungseinheit) stehen in derselben Zelle, durch „;" getrennt – alle gelten. Aktuell ca. 153.000 Artikel.
+  einer Bezeichnung zusammengefügt werden. Optionale Spalte `EAN` (als Text, nicht als Zahl formatieren): wird in der Artikelsuche (ab 6 Ziffern) und beim Scannen berücksichtigt, ein gescannter EAN wird direkt dem Artikel zugeordnet. Aktuell ca. 61.900 Artikel mit EAN. Mehrere EANs je Artikel (z.B. je Verpackungseinheit) stehen in derselben Zelle, durch „;" getrennt – alle gelten. Aktuell ca. 94.600 Artikel (SAP-MARA-Export vom 20.11.2026 plus Artikel, die an einem Standort auf einem Lagerplatz stehen).
 - `data/lagerplatzliste.xlsx` – Spalte `Lagerplatz` (eine `Bezeichnung`-Spalte ist optional, wird aber
   aktuell nicht mitgeführt). Aktuell 234 Plätze.
 - `data/artikel-lagerplatz.xlsx` – nur für die Massen-Lagerplatzkorrektur: welcher Artikel steht laut
